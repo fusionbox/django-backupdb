@@ -1,0 +1,7 @@
+*.pyc
+*.swp
+doc/_build
+*.egg-info/
+build/
+dist/
+test_project/backup
