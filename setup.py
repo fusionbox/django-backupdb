@@ -8,7 +8,7 @@ def readme():
         return f.read()
 
 
-setup(name='django-fusionbox',
+setup(name='django-backupdb',
       version='1.0',
       description='Management commands for backing up and restoring databases in Django.',
       long_description=readme(),
