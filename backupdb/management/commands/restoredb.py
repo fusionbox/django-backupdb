@@ -166,14 +166,11 @@ class Command(BaseCommand):
         latest_file = pipes.quote(latest_file)
 
         # Build commands
-        drop_cmd = '{pgpassword_env}dropdb {restore_args}'.format(
+        drop_sql = '"SELECT \'DROP TABLE IF EXISTS \\"\' || tablename || \'\\" CASCADE;\' FROM pg_tables WHERE schemaname = \'public\';"'
+        drop_cmd = '{pgpassword_env}psql {restore_args} -t -c {drop_sql} | {pgpassword_env}psql {restore_args}'.format(
             pgpassword_env=pgpassword_env,
             restore_args=restore_args,
-        )
-        create_cmd = '{pgpassword_env}createdb {restore_args} --owner={user}'.format(
-            pgpassword_env=pgpassword_env,
-            restore_args=restore_args,
-            user=user,
+            drop_sql=drop_sql,
         )
         restore_cmd = 'cat {latest_file} | gunzip | {pgpassword_env}psql {restore_args}'.format(
             latest_file=latest_file,
@@ -183,7 +180,6 @@ class Command(BaseCommand):
 
         # Execute
         self.do_command(drop_cmd, 'dropping', db)
-        self.do_command(create_cmd, 'creating', db)
         self.do_command(restore_cmd, 'restoring', db)
 
     @require_latest_exists
