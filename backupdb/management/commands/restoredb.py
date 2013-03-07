@@ -152,8 +152,6 @@ class Command(BaseCommand):
         # Build args to restore command
         restore_args = []
         restore_args += ['--username={0}'.format(pipes.quote(root_user))]
-        if root_password:
-            restore_args += ['--password']
         if host:
             restore_args += ['--host={0}'.format(pipes.quote(host))]
         if port:
