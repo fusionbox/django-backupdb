@@ -113,8 +113,6 @@ class Command(BaseCommand):
         # Build args to dump command
         dump_args = []
         dump_args += ['--username={0}'.format(pipes.quote(user))]
-        if password:
-            dump_args += ['--password']
         if host:
             dump_args += ['--host={0}'.format(pipes.quote(host))]
         if port:
@@ -122,17 +120,20 @@ class Command(BaseCommand):
         dump_args += [pipes.quote(db)]
         dump_args = ' '.join(dump_args)
 
+        pgpassword_env = 'PGPASSWORD={0} '.format(password) if password else ''
+
         # Build filenames
         timestamp_file = pipes.quote(timestamp_file)
 
         # Build command
-        cmd = 'pg_dump {dump_args} | gzip > {timestamp_file}'.format(
+        cmd = '{pgpassword_env}pg_dump {dump_args} | gzip > {timestamp_file}'.format(
+            pgpassword_env=pgpassword_env,
             dump_args=dump_args,
             timestamp_file=timestamp_file,
         )
 
         # Execute
-        self.do_command(cmd, db, password)
+        self.do_command(cmd, db)
 
         print 'Backed up {db}; Load with `cat {timestamp_file} | gunzip | psql {dump_args}`'.format(
             db=db,

@@ -161,25 +161,32 @@ class Command(BaseCommand):
         restore_args += [pipes.quote(db)]
         restore_args = ' '.join(restore_args)
 
+        pgpassword_env = 'PGPASSWORD={0} '.format(root_password) if root_password else ''
+
         # Sanitize other args
         user = pipes.quote(user)
         latest_file = pipes.quote(latest_file)
 
         # Build commands
-        drop_cmd = 'dropdb {restore_args}'.format(restore_args=restore_args)
-        create_cmd = 'createdb {restore_args} --owner={user}'.format(
+        drop_cmd = '{pgpassword_env}dropdb {restore_args}'.format(
+            pgpassword_env=pgpassword_env,
+            restore_args=restore_args,
+        )
+        create_cmd = '{pgpassword_env}createdb {restore_args} --owner={user}'.format(
+            pgpassword_env=pgpassword_env,
             restore_args=restore_args,
             user=user,
         )
-        restore_cmd = 'cat {latest_file} | gunzip | psql {restore_args}'.format(
+        restore_cmd = 'cat {latest_file} | gunzip | {pgpassword_env}psql {restore_args}'.format(
             latest_file=latest_file,
+            pgpassword_env=pgpassword_env,
             restore_args=restore_args,
         )
 
         # Execute
-        self.do_command(drop_cmd, 'dropping', db, root_password)
-        self.do_command(create_cmd, 'creating', db, root_password)
-        self.do_command(restore_cmd, 'restoring', db, root_password)
+        self.do_command(drop_cmd, 'dropping', db)
+        self.do_command(create_cmd, 'creating', db)
+        self.do_command(restore_cmd, 'restoring', db)
 
     @require_latest_exists
     def do_sqlite_restore(self, latest_file, db_file):
