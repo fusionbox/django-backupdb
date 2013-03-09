@@ -26,13 +26,28 @@ class Command(BaseCommand):
             '--backup-name',
             help='Specify a name for the backup e.g. "--backup-name=test" will create backup files that look like "test.pgsql.gz".  Defaults to the current timestamp.',
         ),
+        make_option(
+            '--no-owner',
+            action='store_true',
+            default=False,
+            help='For postgres backups, specify that no owner information should be saved in the backup.  This is useful for creating backups that will transfer to other servers.',
+        ),
+        make_option(
+            '--no-privileges',
+            action='store_true',
+            default=False,
+            help='For postgres backups, specify that no privilege information should be saved in the backup.  This is useful for creating backups that will transfer to other servers.',
+        ),
     )
 
     def handle(self, *args, **options):
         from django.conf import settings
 
         current_time = time.strftime('%F-%s')
+
         backup_name = options.get('backup_name')
+        no_owner = options.get('no_owner')
+        no_privileges = options.get('no_privileges')
 
         if not os.path.exists(BACKUP_DIR):
             os.makedirs(BACKUP_DIR)
@@ -70,6 +85,8 @@ class Command(BaseCommand):
                     backup_file = '{0}-{1}.pgsql.gz'.format(database_name, current_time)
 
                 backup_kwargs['backup_file'] = os.path.join(BACKUP_DIR, backup_file)
+                backup_kwargs['no_owner'] = no_owner
+                backup_kwargs['no_privileges'] = no_privileges
 
             # SQLite command and args
             elif config['ENGINE'] == 'django.db.backends.sqlite3':
@@ -136,9 +153,18 @@ class Command(BaseCommand):
             dump_args=dump_args,
         )
 
-    def do_postgresql_backup(self, backup_file, db, user, password=None, host=None, port=None):
+    def do_postgresql_backup(self, backup_file, db, user, password=None, host=None, port=None, no_owner=False, no_privileges=False):
         # Build args to dump command
-        dump_args = ['--clean', '--inserts']  # Add drop table statements
+        dump_args = ['--clean', '--inserts']
+
+        # The following two options are for making backups that are more
+        # transferable between servers (where the database users might be
+        # different)
+        if no_owner:
+            dump_args += ['--no-owner']
+        if no_privileges:
+            dump_args += ['--no-privileges']
+
         dump_args += ['--username={0}'.format(pipes.quote(user))]
         if host:
             dump_args += ['--host={0}'.format(pipes.quote(host))]
