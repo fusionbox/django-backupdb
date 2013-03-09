@@ -21,11 +21,18 @@ class Command(BaseCommand):
     help = 'Backs up each database in settings.DATABASES.'
     can_import_settings = True
 
+    option_list = BaseCommand.option_list + (
+        make_option(
+            '--backup-name',
+            help='Specify a name for the backup e.g. "--backup-name=test" will create backup files that look like "test.pgsql.gz".  Defaults to the current timestamp.',
+        ),
+    )
 
     def handle(self, *args, **options):
         from django.conf import settings
 
         current_time = time.strftime('%F-%s')
+        backup_name = options.get('backup_name')
 
         if not os.path.exists(BACKUP_DIR):
             os.makedirs(BACKUP_DIR)
@@ -34,41 +41,57 @@ class Command(BaseCommand):
         for database_name in settings.DATABASES:
             config = settings.DATABASES[database_name]
 
+            backup_kwargs = {
+                'db': config['NAME'],
+                'user': config['USER'],
+                'password': config.get('PASSWORD', None),
+                'host': config.get('HOST', None),
+                'port': config.get('PORT', None),
+            }
+
             # MySQL command and args
             if config['ENGINE'] == 'django.db.backends.mysql':
                 backup_cmd = self.do_mysql_backup
-                backup_kwargs = {
-                    'backup_file': os.path.join(BACKUP_DIR, '{0}-{1}.mysql.gz'.format(database_name, current_time)),
-                    'db': config['NAME'],
-                    'user': config['USER'],
-                    'password': config.get('PASSWORD', None),
-                    'host': config.get('HOST', None),
-                    'port': config.get('PORT', None),
-                }
+
+                if backup_name:
+                    backup_file = '{0}.mysql.gz'.format(backup_name)
+                else:
+                    backup_file = '{0}-{1}.mysql.gz'.format(database_name, current_time)
+
+                backup_kwargs['backup_file'] = os.path.join(BACKUP_DIR, backup_file)
+
             # PostgreSQL command and args
             elif config['ENGINE'] in ('django.db.backends.postgresql_psycopg2', 'django.contrib.gis.db.backends.postgis'):
                 backup_cmd = self.do_postgresql_backup
-                backup_kwargs = {
-                    'backup_file': os.path.join(BACKUP_DIR, '{0}-{1}.pgsql.gz'.format(database_name, current_time)),
-                    'db': config['NAME'],
-                    'user': config['USER'],
-                    'password': config.get('PASSWORD', None),
-                    'host': config.get('HOST', None),
-                    'port': config.get('PORT', None),
-                }
+
+                if backup_name:
+                    backup_file = '{0}.pgsql.gz'.format(backup_name)
+                else:
+                    backup_file = '{0}-{1}.pgsql.gz'.format(database_name, current_time)
+
+                backup_kwargs['backup_file'] = os.path.join(BACKUP_DIR, backup_file)
+
             # SQLite command and args
             elif config['ENGINE'] == 'django.db.backends.sqlite3':
                 backup_cmd = self.do_sqlite_backup
+
+                if backup_name:
+                    backup_file = '{0}.sqlite.gz'.format(backup_name)
+                else:
+                    backup_file = '{0}-{1}.sqlite.gz'.format(database_name, current_time)
+
                 backup_kwargs = {
-                    'backup_file': os.path.join(BACKUP_DIR, '{0}-{1}.sqlite.gz'.format(database_name, current_time)),
+                    'backup_file': os.path.join(BACKUP_DIR, backup_file),
                     'db_file': config['NAME'],
                 }
+
             # Unsupported
             else:
                 backup_cmd = None
 
             # Run backup command with args
             print '========== Backing up \'{0}\'...'.format(database_name)
+
             if backup_cmd:
                 try:
                     backup_cmd(**backup_kwargs)
@@ -79,6 +102,7 @@ class Command(BaseCommand):
             else:
                 print 'Backup for {0} engine not implemented.'.format(config['ENGINE'])
                 print '========== ...skipped.'
+
             print ''
 
     def do_mysql_backup(self, backup_file, db, user, password=None, host=None, port=None):
