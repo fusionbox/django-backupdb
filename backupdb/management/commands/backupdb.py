@@ -163,7 +163,7 @@ class Command(BaseCommand):
             backup_file=backup_file,
         )
 
-    def do_command(cls, cmd, db, password=None):
+    def do_command(cls, cmd, db):
         """
         Executes a command and prints a status message.
         """
@@ -172,12 +172,7 @@ class Command(BaseCommand):
 
         with open('/dev/null', 'w') as FNULL:
             process = Popen(cmd, stdin=PIPE, stdout=FNULL, stderr=FNULL, shell=True)
-
-            # Enter a password through stdin if required
-            if password:
-                process.communicate(input='{0}\n'.format(password))
-            else:
-                process.wait()
+            process.wait()
 
             if process.returncode != 0:
                 raise BackupError('Error code {code} while backing up database \'{db}\'!'.format(
