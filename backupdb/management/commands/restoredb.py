@@ -11,6 +11,10 @@ from django.core.management.base import BaseCommand, CommandError
 from .backupdb import BACKUP_DIR
 
 
+class RestoreError(Exception):
+    pass
+
+
 def get_latest_file(pattern):
     l = glob.glob(pattern)
     l.sort()
@@ -22,7 +26,7 @@ def require_backup_exists(func):
     def new_func(self, **kwargs):
         backup_file = kwargs['backup_file']
         if not os.path.exists(backup_file):
-            raise Command.RestoreError(
+            raise RestoreError(
                 'Could not find file \'{0}\'!'.format(backup_file)
             )
         else:
@@ -34,8 +38,6 @@ class Command(BaseCommand):
     help = 'Restores each database in settings.DATABASES from latest db backup.'
     can_import_settings = True
 
-    class RestoreError(Exception):
-        pass
 
     def handle(self, *args, **options):
         from django.conf import settings
@@ -104,7 +106,7 @@ class Command(BaseCommand):
                 try:
                     restore_cmd(**restore_kwargs)
                     print '========== ...done!'
-                except self.RestoreError as e:
+                except RestoreError as e:
                     print e.message
                     print '========== ...skipped.'
             else:
@@ -205,7 +207,7 @@ class Command(BaseCommand):
             process.wait()
 
             if process.returncode != 0:
-                raise cls.RestoreError('Error code {code} while {verb} database \'{db}\'!'.format(
+                raise RestoreError('Error code {code} while {verb} database \'{db}\'!'.format(
                     code=process.returncode,
                     verb=verb,
                     db=db,
