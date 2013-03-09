@@ -18,12 +18,12 @@ def get_latest_file(pattern):
     return l[0] if l else None
 
 
-def require_latest_exists(func):
+def require_backup_exists(func):
     def new_func(self, **kwargs):
-        latest_file = kwargs['latest_file']
-        if not os.path.exists(latest_file):
+        backup_file = kwargs['backup_file']
+        if not os.path.exists(backup_file):
             raise Command.RestoreError(
-                'Could not find file \'{0}\'!'.format(latest_file)
+                'Could not find file \'{0}\'!'.format(backup_file)
             )
         else:
             return func(self, **kwargs)
@@ -50,11 +50,11 @@ class Command(BaseCommand):
             # MySQL command and args
             if config['ENGINE'] == 'django.db.backends.mysql':
                 restore_cmd = self.do_mysql_restore
-                latest_file = get_latest_file('{0}/*.mysql.gz'.format(BACKUP_DIR))
-                if not latest_file:
+                backup_file = get_latest_file('{0}/*.mysql.gz'.format(BACKUP_DIR))
+                if not backup_file:
                     raise CommandError('No MySQL backups found!')
                 restore_kwargs = {
-                    'latest_file': latest_file,
+                    'backup_file': backup_file,
                     'db': config['NAME'],
                     'user': config.get('USER', None),
                     'password': config.get('PASSWORD', None),
@@ -64,11 +64,11 @@ class Command(BaseCommand):
             # PostgreSQL command and args
             elif config['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
                 restore_cmd = self.do_postgresql_restore
-                latest_file = get_latest_file('{0}/*.pgsql.gz'.format(BACKUP_DIR))
-                if not latest_file:
+                backup_file = get_latest_file('{0}/*.pgsql.gz'.format(BACKUP_DIR))
+                if not backup_file:
                     raise CommandError('No PostgreSQL backups found!')
                 restore_kwargs = {
-                    'latest_file': latest_file,
+                    'backup_file': backup_file,
                     'db': config['NAME'],
                     'user': config.get('USER', None),
                     'password': config.get('PASSWORD', None),
@@ -78,11 +78,11 @@ class Command(BaseCommand):
             # SQLite command and args
             elif config['ENGINE'] == 'django.db.backends.sqlite3':
                 restore_cmd = self.do_sqlite_restore
-                latest_file = get_latest_file('{0}/*.sqlite.gz'.format(BACKUP_DIR))
-                if not latest_file:
+                backup_file = get_latest_file('{0}/*.sqlite.gz'.format(BACKUP_DIR))
+                if not backup_file:
                     raise CommandError('No SQLite backups found!')
                 restore_kwargs = {
-                    'latest_file': latest_file,
+                    'backup_file': backup_file,
                     'db_file': config['NAME'],
                 }
             # Unsupported
@@ -103,8 +103,8 @@ class Command(BaseCommand):
                 print '========== ...skipped.'
             print ''
 
-    @require_latest_exists
-    def do_mysql_restore(self, latest_file, db, user, password=None, host=None, port=None):
+    @require_backup_exists
+    def do_mysql_restore(self, backup_file, db, user, password=None, host=None, port=None):
         # Build args to restore command
         restore_args = []
         restore_args += ['--user={0}'.format(pipes.quote(user))]
@@ -118,15 +118,15 @@ class Command(BaseCommand):
         restore_args = ' '.join(restore_args)
 
         # Sanitize other args
-        latest_file = pipes.quote(latest_file)
+        backup_file = pipes.quote(backup_file)
 
         # Build commands
         drop_cmd = 'mysqldump {restore_args} --no-data | grep "^DROP" | mysql {restore_args}'.format(
             restore_args=restore_args,
         )
-        restore_cmd = 'cat {latest_file} | gunzip | mysql {restore_args}'.format(
+        restore_cmd = 'cat {backup_file} | gunzip | mysql {restore_args}'.format(
             drop_cmd=drop_cmd,
-            latest_file=latest_file,
+            backup_file=backup_file,
             restore_args=restore_args,
         )
 
@@ -134,8 +134,8 @@ class Command(BaseCommand):
         self.do_command(drop_cmd, 'clearing', db)
         self.do_command(restore_cmd, 'restoring', db)
 
-    @require_latest_exists
-    def do_postgresql_restore(self, latest_file, db, user, password=None, host=None, port=None):
+    @require_backup_exists
+    def do_postgresql_restore(self, backup_file, db, user, password=None, host=None, port=None):
         # Build args to restore command
         restore_args = []
         restore_args += ['--username={0}'.format(pipes.quote(user))]
@@ -149,7 +149,7 @@ class Command(BaseCommand):
         pgpassword_env = 'PGPASSWORD={0} '.format(password) if password else ''
 
         # Sanitize other args
-        latest_file = pipes.quote(latest_file)
+        backup_file = pipes.quote(backup_file)
 
         # Build commands
         drop_sql = '"SELECT \'DROP TABLE IF EXISTS \\"\' || tablename || \'\\" CASCADE;\' FROM pg_tables WHERE schemaname = \'public\';"'
@@ -158,8 +158,8 @@ class Command(BaseCommand):
             restore_args=restore_args,
             drop_sql=drop_sql,
         )
-        restore_cmd = 'cat {latest_file} | gunzip | {pgpassword_env}psql {restore_args}'.format(
-            latest_file=latest_file,
+        restore_cmd = 'cat {backup_file} | gunzip | {pgpassword_env}psql {restore_args}'.format(
+            backup_file=backup_file,
             pgpassword_env=pgpassword_env,
             restore_args=restore_args,
         )
@@ -168,15 +168,15 @@ class Command(BaseCommand):
         self.do_command(drop_cmd, 'dropping', db)
         self.do_command(restore_cmd, 'restoring', db)
 
-    @require_latest_exists
-    def do_sqlite_restore(self, latest_file, db_file):
+    @require_backup_exists
+    def do_sqlite_restore(self, backup_file, db_file):
         # Build filenames
         db_file = pipes.quote(db_file)
-        latest_file = pipes.quote(latest_file)
+        backup_file = pipes.quote(backup_file)
 
         # Build command
-        cmd = 'cat {latest_file} | gunzip > {db_file}'.format(
-            latest_file=latest_file,
+        cmd = 'cat {backup_file} | gunzip > {db_file}'.format(
+            backup_file=backup_file,
             db_file=db_file,
         )
 
