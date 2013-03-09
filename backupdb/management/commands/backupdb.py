@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 backup_cmd = self.do_mysql_backup
 
                 if backup_name:
-                    backup_file = '{0}.mysql.gz'.format(backup_name)
+                    backup_file = '{0}-{1}.mysql.gz'.format(database_name, backup_name)
                 else:
                     backup_file = '{0}-{1}.mysql.gz'.format(database_name, current_time)
 
@@ -65,7 +65,7 @@ class Command(BaseCommand):
                 backup_cmd = self.do_postgresql_backup
 
                 if backup_name:
-                    backup_file = '{0}.pgsql.gz'.format(backup_name)
+                    backup_file = '{0}-{1}.pgsql.gz'.format(database_name, backup_name)
                 else:
                     backup_file = '{0}-{1}.pgsql.gz'.format(database_name, current_time)
 
@@ -76,7 +76,7 @@ class Command(BaseCommand):
                 backup_cmd = self.do_sqlite_backup
 
                 if backup_name:
-                    backup_file = '{0}.sqlite.gz'.format(backup_name)
+                    backup_file = '{0}-{1}.sqlite.gz'.format(database_name, backup_name)
                 else:
                     backup_file = '{0}-{1}.sqlite.gz'.format(database_name, current_time)
 

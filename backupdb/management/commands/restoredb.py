@@ -77,7 +77,7 @@ class Command(BaseCommand):
                 restore_cmd = self.do_mysql_restore
 
                 if backup_name:
-                    backup_file = '{0}/{1}.mysql.gz'.format(BACKUP_DIR, backup_name)
+                    backup_file = '{0}/{1}-{2}.mysql.gz'.format(BACKUP_DIR, database_name, backup_name)
                 else:
                     backup_file = get_latest_file('{0}/{1}.mysql.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
 
@@ -96,7 +96,7 @@ class Command(BaseCommand):
                 restore_cmd = self.do_postgresql_restore
 
                 if backup_name:
-                    backup_file = '{0}/{1}.pgsql.gz'.format(BACKUP_DIR, backup_name)
+                    backup_file = '{0}/{1}-{2}.pgsql.gz'.format(BACKUP_DIR, database_name, backup_name)
                 else:
                     backup_file = get_latest_file('{0}/{1}.pgsql.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
 
@@ -115,7 +115,7 @@ class Command(BaseCommand):
                 restore_cmd = self.do_sqlite_restore
 
                 if backup_name:
-                    backup_file = '{0}/{1}.sqlite.gz'.format(BACKUP_DIR, backup_name)
+                    backup_file = '{0}/{1}-{2}.sqlite.gz'.format(BACKUP_DIR, database_name, backup_name)
                 else:
                     backup_file = get_latest_file('{0}/{1}.sqlite.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
 
