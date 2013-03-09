@@ -12,6 +12,9 @@ from django.core.management.base import BaseCommand, CommandError
 from .backupdb import BACKUP_DIR
 
 
+TIMESTAMP_PATTERN = '*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+
+
 class RestoreError(Exception):
     pass
 
@@ -76,7 +79,7 @@ class Command(BaseCommand):
                 if backup_name:
                     backup_file = '{0}/{1}.mysql.gz'.format(BACKUP_DIR, backup_name)
                 else:
-                    backup_file = get_latest_file('{0}/*.mysql.gz'.format(BACKUP_DIR))
+                    backup_file = get_latest_file('{0}/{1}.mysql.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
 
                 restore_kwargs = {
                     'backup_file': backup_file,
@@ -95,7 +98,7 @@ class Command(BaseCommand):
                 if backup_name:
                     backup_file = '{0}/{1}.pgsql.gz'.format(BACKUP_DIR, backup_name)
                 else:
-                    backup_file = get_latest_file('{0}/*.pgsql.gz'.format(BACKUP_DIR))
+                    backup_file = get_latest_file('{0}/{1}.pgsql.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
 
                 restore_kwargs = {
                     'backup_file': backup_file,
@@ -114,7 +117,7 @@ class Command(BaseCommand):
                 if backup_name:
                     backup_file = '{0}/{1}.sqlite.gz'.format(BACKUP_DIR, backup_name)
                 else:
-                    backup_file = get_latest_file('{0}/*.sqlite.gz'.format(BACKUP_DIR))
+                    backup_file = get_latest_file('{0}/{1}.sqlite.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
 
                 restore_kwargs = {
                     'backup_file': backup_file,
