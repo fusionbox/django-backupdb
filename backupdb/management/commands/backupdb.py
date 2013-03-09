@@ -13,12 +13,14 @@ from django.core.management.base import BaseCommand
 BACKUP_DIR = 'backups'
 
 
+class BackupError(Exception):
+    pass
+
+
 class Command(BaseCommand):
     help = 'Backs up each database in settings.DATABASES.'
     can_import_settings = True
 
-    class BackupError(Exception):
-        pass
 
     def handle(self, *args, **options):
         from django.conf import settings
@@ -71,7 +73,7 @@ class Command(BaseCommand):
                 try:
                     backup_cmd(**backup_kwargs)
                     print '========== ...done!'
-                except self.BackupError as e:
+                except BackupError as e:
                     print e.message
                     print '========== ...skipped.'
             else:
@@ -178,7 +180,7 @@ class Command(BaseCommand):
                 process.wait()
 
             if process.returncode != 0:
-                raise cls.BackupError('Error code {code} while backing up database \'{db}\'!'.format(
+                raise BackupError('Error code {code} while backing up database \'{db}\'!'.format(
                     code=process.returncode,
                     db=db,
                 ))
