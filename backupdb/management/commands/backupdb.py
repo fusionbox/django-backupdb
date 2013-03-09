@@ -38,7 +38,7 @@ class Command(BaseCommand):
             if config['ENGINE'] == 'django.db.backends.mysql':
                 backup_cmd = self.do_mysql_backup
                 backup_kwargs = {
-                    'timestamp_file': os.path.join(BACKUP_DIR, '{0}-{1}.mysql.gz'.format(database_name, current_time)),
+                    'backup_file': os.path.join(BACKUP_DIR, '{0}-{1}.mysql.gz'.format(database_name, current_time)),
                     'db': config['NAME'],
                     'user': config['USER'],
                     'password': config.get('PASSWORD', None),
@@ -49,7 +49,7 @@ class Command(BaseCommand):
             elif config['ENGINE'] in ('django.db.backends.postgresql_psycopg2', 'django.contrib.gis.db.backends.postgis'):
                 backup_cmd = self.do_postgresql_backup
                 backup_kwargs = {
-                    'timestamp_file': os.path.join(BACKUP_DIR, '{0}-{1}.pgsql.gz'.format(database_name, current_time)),
+                    'backup_file': os.path.join(BACKUP_DIR, '{0}-{1}.pgsql.gz'.format(database_name, current_time)),
                     'db': config['NAME'],
                     'user': config['USER'],
                     'password': config.get('PASSWORD', None),
@@ -60,7 +60,7 @@ class Command(BaseCommand):
             elif config['ENGINE'] == 'django.db.backends.sqlite3':
                 backup_cmd = self.do_sqlite_backup
                 backup_kwargs = {
-                    'timestamp_file': os.path.join(BACKUP_DIR, '{0}-{1}.sqlite.gz'.format(database_name, current_time)),
+                    'backup_file': os.path.join(BACKUP_DIR, '{0}-{1}.sqlite.gz'.format(database_name, current_time)),
                     'db_file': config['NAME'],
                 }
             # Unsupported
@@ -81,7 +81,7 @@ class Command(BaseCommand):
                 print '========== ...skipped.'
             print ''
 
-    def do_mysql_backup(self, timestamp_file, db, user, password=None, host=None, port=None):
+    def do_mysql_backup(self, backup_file, db, user, password=None, host=None, port=None):
         # Build args to dump command
         dump_args = []
         dump_args += ['--user={0}'.format(pipes.quote(user))]
@@ -95,24 +95,24 @@ class Command(BaseCommand):
         dump_args = ' '.join(dump_args)
 
         # Build filenames
-        timestamp_file = pipes.quote(timestamp_file)
+        backup_file = pipes.quote(backup_file)
 
         # Build command
-        cmd = 'mysqldump {dump_args} | gzip > {timestamp_file}'.format(
+        cmd = 'mysqldump {dump_args} | gzip > {backup_file}'.format(
             dump_args=dump_args,
-            timestamp_file=timestamp_file,
+            backup_file=backup_file,
         )
 
         # Execute
         self.do_command(cmd, db)
 
-        print 'Backed up {db}; Load with `cat {timestamp_file} | gunzip | mysql {dump_args}`'.format(
+        print 'Backed up {db}; Load with `cat {backup_file} | gunzip | mysql {dump_args}`'.format(
             db=db,
-            timestamp_file=timestamp_file,
+            backup_file=backup_file,
             dump_args=dump_args,
         )
 
-    def do_postgresql_backup(self, timestamp_file, db, user, password=None, host=None, port=None):
+    def do_postgresql_backup(self, backup_file, db, user, password=None, host=None, port=None):
         # Build args to dump command
         dump_args = []
         dump_args += ['--username={0}'.format(pipes.quote(user))]
@@ -126,41 +126,41 @@ class Command(BaseCommand):
         pgpassword_env = 'PGPASSWORD={0} '.format(password) if password else ''
 
         # Build filenames
-        timestamp_file = pipes.quote(timestamp_file)
+        backup_file = pipes.quote(backup_file)
 
         # Build command
-        cmd = '{pgpassword_env}pg_dump {dump_args} | gzip > {timestamp_file}'.format(
+        cmd = '{pgpassword_env}pg_dump {dump_args} | gzip > {backup_file}'.format(
             pgpassword_env=pgpassword_env,
             dump_args=dump_args,
-            timestamp_file=timestamp_file,
+            backup_file=backup_file,
         )
 
         # Execute
         self.do_command(cmd, db)
 
-        print 'Backed up {db}; Load with `cat {timestamp_file} | gunzip | psql {dump_args}`'.format(
+        print 'Backed up {db}; Load with `cat {backup_file} | gunzip | psql {dump_args}`'.format(
             db=db,
-            timestamp_file=timestamp_file,
+            backup_file=backup_file,
             dump_args=dump_args,
         )
 
-    def do_sqlite_backup(self, timestamp_file, db_file):
+    def do_sqlite_backup(self, backup_file, db_file):
         # Build filenames
         db_file = pipes.quote(db_file)
-        timestamp_file = pipes.quote(timestamp_file)
+        backup_file = pipes.quote(backup_file)
 
         # Build command
-        cmd = 'gzip < {db_file} > {timestamp_file}'.format(
+        cmd = 'gzip < {db_file} > {backup_file}'.format(
             db_file=db_file,
-            timestamp_file=timestamp_file,
+            backup_file=backup_file,
         )
 
         # Execute
         self.do_command(cmd, db_file)
 
-        print 'Backed up {db_file}; Load with `cat {timestamp_file} | gunzip > {db_file}`'.format(
+        print 'Backed up {db_file}; Load with `cat {backup_file} | gunzip > {db_file}`'.format(
             db_file=db_file,
-            timestamp_file=timestamp_file,
+            backup_file=backup_file,
         )
 
     def do_command(cls, cmd, db, password=None):
