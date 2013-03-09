@@ -50,9 +50,11 @@ class Command(BaseCommand):
             # MySQL command and args
             if config['ENGINE'] == 'django.db.backends.mysql':
                 restore_cmd = self.do_mysql_restore
+
                 backup_file = get_latest_file('{0}/*.mysql.gz'.format(BACKUP_DIR))
                 if not backup_file:
                     raise CommandError('No MySQL backups found!')
+
                 restore_kwargs = {
                     'backup_file': backup_file,
                     'db': config['NAME'],
@@ -61,12 +63,15 @@ class Command(BaseCommand):
                     'host': config.get('HOST', None),
                     'port': config.get('PORT', None),
                 }
+
             # PostgreSQL command and args
             elif config['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
                 restore_cmd = self.do_postgresql_restore
+
                 backup_file = get_latest_file('{0}/*.pgsql.gz'.format(BACKUP_DIR))
                 if not backup_file:
                     raise CommandError('No PostgreSQL backups found!')
+
                 restore_kwargs = {
                     'backup_file': backup_file,
                     'db': config['NAME'],
@@ -75,12 +80,15 @@ class Command(BaseCommand):
                     'host': config.get('HOST', None),
                     'port': config.get('PORT', None),
                 }
+
             # SQLite command and args
             elif config['ENGINE'] == 'django.db.backends.sqlite3':
                 restore_cmd = self.do_sqlite_restore
+
                 backup_file = get_latest_file('{0}/*.sqlite.gz'.format(BACKUP_DIR))
                 if not backup_file:
                     raise CommandError('No SQLite backups found!')
+
                 restore_kwargs = {
                     'backup_file': backup_file,
                     'db_file': config['NAME'],
@@ -91,6 +99,7 @@ class Command(BaseCommand):
 
             # Run restore command with args
             print '========== Restoring \'{0}\'...'.format(database_name)
+
             if restore_cmd:
                 try:
                     restore_cmd(**restore_kwargs)
@@ -101,6 +110,7 @@ class Command(BaseCommand):
             else:
                 print 'Restore for {0} engine not implemented.'.format(config['ENGINE'])
                 print '========== ...skipped.'
+
             print ''
 
     @require_backup_exists
