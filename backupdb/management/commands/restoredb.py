@@ -1,11 +1,11 @@
 """
 Adapted from http://djangosnippets.org/snippets/823/
 """
+from optparse import make_option
+from subprocess import Popen, PIPE
 import glob
 import os
 import pipes
-from optparse import make_option
-from subprocess import Popen, PIPE
 
 from django.core.management.base import BaseCommand, CommandError
 
