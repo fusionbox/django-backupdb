@@ -138,7 +138,7 @@ class Command(BaseCommand):
 
     def do_postgresql_backup(self, backup_file, db, user, password=None, host=None, port=None):
         # Build args to dump command
-        dump_args = []
+        dump_args = ['-c']  # Add drop table statements
         dump_args += ['--username={0}'.format(pipes.quote(user))]
         if host:
             dump_args += ['--host={0}'.format(pipes.quote(host))]
