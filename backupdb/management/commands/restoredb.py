@@ -30,17 +30,6 @@ def require_latest_exists(func):
     return new_func
 
 
-def require_root_user(func):
-    def new_func(self, **kwargs):
-        if not kwargs.get('root_user', None):
-            raise Command.RestoreError(
-                'Please specify a ROOT_USER and ROOT_PASSWORD in the database configuration.'
-            )
-        else:
-            return func(self, **kwargs)
-    return new_func
-
-
 class Command(BaseCommand):
     help = 'Restores each database in settings.DATABASES from latest db backup.'
     can_import_settings = True
@@ -82,8 +71,7 @@ class Command(BaseCommand):
                     'latest_file': latest_file,
                     'db': config['NAME'],
                     'user': config.get('USER', None),
-                    'root_user': config.get('ROOT_USER', None),
-                    'root_password': config.get('ROOT_PASSWORD', None),
+                    'password': config.get('PASSWORD', None),
                     'host': config.get('HOST', None),
                     'port': config.get('PORT', None),
                 }
@@ -147,11 +135,10 @@ class Command(BaseCommand):
         self.do_command(restore_cmd, 'restoring', db)
 
     @require_latest_exists
-    @require_root_user
-    def do_postgresql_restore(self, latest_file, db, user, root_user=None, root_password=None, host=None, port=None):
+    def do_postgresql_restore(self, latest_file, db, user, password=None, host=None, port=None):
         # Build args to restore command
         restore_args = []
-        restore_args += ['--username={0}'.format(pipes.quote(root_user))]
+        restore_args += ['--username={0}'.format(pipes.quote(user))]
         if host:
             restore_args += ['--host={0}'.format(pipes.quote(host))]
         if port:
@@ -159,10 +146,9 @@ class Command(BaseCommand):
         restore_args += [pipes.quote(db)]
         restore_args = ' '.join(restore_args)
 
-        pgpassword_env = 'PGPASSWORD={0} '.format(root_password) if root_password else ''
+        pgpassword_env = 'PGPASSWORD={0} '.format(password) if password else ''
 
         # Sanitize other args
-        user = pipes.quote(user)
         latest_file = pipes.quote(latest_file)
 
         # Build commands
@@ -197,7 +183,7 @@ class Command(BaseCommand):
         # Execute
         self.do_command(cmd, 'restoring', db_file)
 
-    def do_command(cls, cmd, verb, db, password=None):
+    def do_command(cls, cmd, verb, db):
         """
         Executes a command and prints a status message.
         """
@@ -206,12 +192,7 @@ class Command(BaseCommand):
 
         with open('/dev/null', 'w') as FNULL:
             process = Popen(cmd, stdin=PIPE, stdout=FNULL, stderr=FNULL, shell=True)
-
-            # Enter a password through stdin if required
-            if password:
-                process.communicate(input='{0}\n'.format(password))
-            else:
-                process.wait()
+            process.wait()
 
             if process.returncode != 0:
                 raise cls.RestoreError('Error code {code} while {verb} database \'{db}\'!'.format(
