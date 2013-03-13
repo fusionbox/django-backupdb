@@ -4,7 +4,7 @@ from os.path import dirname, abspath
 import os
 import sys
 
-from django.conf import settings, global_settings
+from django.conf import settings
 
 
 if not settings.configured and not os.environ.get('DJANGO_SETTINGS_MODULE'):
@@ -12,17 +12,18 @@ if not settings.configured and not os.environ.get('DJANGO_SETTINGS_MODULE'):
         DATABASES={
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': 'test_backupdb',
+                'NAME': 'backupdb_database',
+                'TEST_NAME': 'test_backupdb_database',
             },
-            'test_mysql': {
+            'mysql': {
                 'ENGINE': 'django.db.backends.mysql',
-                'NAME': 'test_backupdb',
-                'USER': 'test_backupdb_user',
+                'NAME': 'backupdb',
+                'USER': 'root',
             },
-            'test_postgresql': {
+            'postgresql': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-                'NAME': 'test_backupdb',
-                'USER': 'test_backupdb_user',
+                'NAME': 'backupdb',
+                'USER': 'backupdb_user',
             },
         },
         INSTALLED_APPS=[
