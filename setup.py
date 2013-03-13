@@ -9,7 +9,7 @@ def readme():
 
 
 setup(name='django-backupdb',
-      version='0.2',
+      version='0.3',
       description='Management commands for backing up and restoring databases in Django.',
       long_description=readme(),
       author='David Sanders',
