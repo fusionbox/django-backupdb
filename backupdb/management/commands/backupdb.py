@@ -27,6 +27,12 @@ class Command(BaseCommand):
             help='Specify a name for the backup e.g. "--backup-name=test" will create backup files that look like "test.pgsql.gz".  Defaults to the current timestamp.',
         ),
         make_option(
+            '--inserts',
+            action='store_true',
+            default=False,
+            help='For postgres backups, specify that data should be backed up as insert statements.',
+        ),
+        make_option(
             '--no-owner',
             action='store_true',
             default=False,
@@ -46,6 +52,7 @@ class Command(BaseCommand):
         current_time = time.strftime('%F-%s')
 
         backup_name = options.get('backup_name')
+        inserts = options.get('inserts')
         no_owner = options.get('no_owner')
         no_privileges = options.get('no_privileges')
 
@@ -85,6 +92,7 @@ class Command(BaseCommand):
                     backup_file = '{0}-{1}.pgsql.gz'.format(database_name, current_time)
 
                 backup_kwargs['backup_file'] = os.path.join(BACKUP_DIR, backup_file)
+                backup_kwargs['inserts'] = inserts
                 backup_kwargs['no_owner'] = no_owner
                 backup_kwargs['no_privileges'] = no_privileges
 
@@ -153,10 +161,11 @@ class Command(BaseCommand):
             dump_args=dump_args,
         )
 
-    def do_postgresql_backup(self, backup_file, db, user, password=None, host=None, port=None, no_owner=False, no_privileges=False):
+    def do_postgresql_backup(self, backup_file, db, user, password=None, host=None, port=None, inserts=False, no_owner=False, no_privileges=False):
         # Build args to dump command
-        dump_args = ['--clean', '--inserts']
-
+        dump_args = ['--clean']
+        if inserts:
+            dump_args += ['--inserts']
         # The following two options are for making backups that are more
         # transferable between servers (where the database users might be
         # different)
