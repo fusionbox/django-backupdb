@@ -24,7 +24,7 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option(
             '--backup-name',
-            help='Specify a name for the backup e.g. "--backup-name=test" will create backup files that look like "test.pgsql.gz".  Defaults to the current timestamp.',
+            help='Specify a name for the backup.  Defaults to the current timestamp.  Example: `--backup-name=test` will create backup files that look like "test.pgsql.gz".',
         ),
         make_option(
             '--inserts',
