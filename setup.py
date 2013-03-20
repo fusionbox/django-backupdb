@@ -8,8 +8,11 @@ def readme():
         return f.read()
 
 
+version = '0.4.1'
+
+
 setup(name='django-backupdb',
-      version='0.4',
+      version=version,
       description='Management commands for backing up and restoring databases in Django.',
       long_description=readme(),
       author='David Sanders',
