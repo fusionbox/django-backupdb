@@ -49,7 +49,7 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option(
             '--backup-name',
-            help='Backup to restore from e.g. "mybackup" in "mybackup.pgsql.gz".  Defaults to latest timestamped backup name.',
+            help='Name of backup to restore from.  Example: `--backup-name=mybackup` will restore any backups that look like "default-mybackup.pgsql.gz".  Defaults to latest timestamped backup name.',
         ),
         make_option(
             '--drop-tables',
