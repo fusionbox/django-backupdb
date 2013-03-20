@@ -55,7 +55,7 @@ class Command(BaseCommand):
             '--drop-tables',
             action='store_true',
             default=False,
-            help='Drop all tables in databases before restoring them',
+            help='** EXPERIMENTAL, USE WITH CAUTION ** Drop all tables in databases before restoring them.  The SQL dumps which are created by backupdb have drop statements so, usually, this option is not necessary.',
         ),
     )
 
