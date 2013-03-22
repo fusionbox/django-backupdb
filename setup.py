@@ -8,7 +8,7 @@ def readme():
         return f.read()
 
 
-version = '0.4.1'
+version = '0.4.1f'
 
 
 setup(name='django-backupdb',
