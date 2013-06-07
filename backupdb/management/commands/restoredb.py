@@ -173,7 +173,6 @@ class Command(BaseCommand):
 
         # Execute
         if drop:
-            import pdb; pdb.set_trace()
             self.do_command(drop_cmd, 'clearing', db)
         self.do_command(restore_cmd, 'restoring', db)
 
@@ -209,7 +208,6 @@ class Command(BaseCommand):
 
         # Execute
         if drop:
-            import pdb; pdb.set_trace()
             self.do_command(drop_cmd, 'dropping', db)
         self.do_command(restore_cmd, 'restoring', db)
 
