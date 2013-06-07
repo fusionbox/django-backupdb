@@ -180,8 +180,7 @@ class Command(BaseCommand):
         from django.conf import settings
 
         current_time = time.strftime('%F-%s')
-        backup_name = options.get('backup_name', current_time)
-        pg_dump_options = options.get('pg_dump_options')
+        backup_name = options['backup_name'] or current_time
 
         if not os.path.exists(BACKUP_DIR):
             os.makedirs(BACKUP_DIR)
@@ -210,7 +209,7 @@ class Command(BaseCommand):
 
             backup_kwargs = {'backup_file': backup_file, 'db_config': db_config}
             if backup_func is do_postgresql_backup:
-                backup_kwargs['pg_dump_options'] = pg_dump_options
+                backup_kwargs['pg_dump_options'] = options['pg_dump_options']
 
             try:
                 backup_func(**backup_kwargs)
