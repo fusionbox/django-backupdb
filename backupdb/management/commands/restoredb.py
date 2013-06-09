@@ -4,10 +4,9 @@ import os
 
 from django.core.management.base import BaseCommand, CommandError
 
-from backupdb_utils.commands import BACKUP_CONFIG
 from backupdb_utils.exceptions import RestoreError
 from backupdb_utils.files import get_latest_timestamped_file
-from backupdb_utils.settings import BACKUP_DIR
+from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
 from backupdb_utils.streams import err, set_verbosity, section, SectionError
 
 

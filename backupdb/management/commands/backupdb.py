@@ -5,9 +5,9 @@ import time
 
 from django.core.management.base import BaseCommand
 
-from backupdb_utils.commands import BACKUP_CONFIG, do_postgresql_backup
+from backupdb_utils.commands import do_postgresql_backup
 from backupdb_utils.exceptions import BackupError
-from backupdb_utils.settings import BACKUP_DIR
+from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
 from backupdb_utils.streams import err, section, SectionError, set_verbosity
 
 
