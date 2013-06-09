@@ -7,6 +7,7 @@ import os
 import pipes
 import shlex
 import time
+import sys
 
 from django.core.management.base import BaseCommand
 
@@ -56,26 +57,17 @@ def do_postgresql_backup(backup_file, db_config, pg_dump_options=None):
     host = db_config.get('HOST')
     port = db_config.get('PORT')
 
-    dump_cmd = ['pg_dump', '--clean', '--username={0}'.format(user)]
+    cmd = ['pg_dump', '--clean', '--username={0}'.format(user)]
     if host:
-        dump_cmd += ['--host={0}'.format(host)]
+        cmd += ['--host={0}'.format(host)]
     if port:
-        dump_cmd += ['--port={0}'.format(port)]
+        cmd += ['--port={0}'.format(port)]
     if pg_dump_options:
-        dump_cmd += shlex.split(pg_dump_options)
-    dump_cmd += [db]
+        cmd += shlex.split(pg_dump_options)
+    cmd += [db]
 
-    gzip_cmd = ['gzip']
-
-    env = os.environ.copy()
-    env['PGPASSWORD'] = password
-
-    pipe_commands_to_file(dump_cmd, gzip_cmd, path=backup_file, env=env)
-
-    print 'Back up of `{db}` saved in `{backup_file}`.'.format(
-        db=db,
-        backup_file=backup_file,
-    )
+    env = {'PGPASSWORD': password}
+    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, extra_env=env)
 
 
 def do_sqlite_backup(backup_file, db_config):
@@ -116,23 +108,33 @@ def do_command(cmd, db):
             ))
 
 
-def pipe_commands_to_file(*cmds, **kwargs):
+def pipe_commands_to_file(cmds, path, extra_env=None):
     """
     Executes the list of commands piping each one into the next and writing
     stdout of the last process into a file at the given path.
     """
-    path = kwargs['path']
-    env = kwargs.get('env')
+    if extra_env:
+        env = os.environ.copy()
+        env.update(extra_env)
+        env_str = ' '.join("{0}='{1}'".format(k, v) for k, v in extra_env.items()) + ' '
+    else:
+        env = None
+        env_str = ''
 
-    print 'saving output of:'
-    print ' | '.join(' '.join(c) for c in cmds)
+    cmd_strs = [
+        '{env_str}{cmd_str}'.format(env_str=env_str, cmd_str=' '.join(cmd))
+        for cmd in cmds
+    ]
+
+    sys.stderr.write('Saving output of:\n')
+    sys.stderr.write(' | '.join(cmd_strs) + '\n')
 
     # Make processes
     processes = []
-    for cmd in cmds:
+    for cmd_str, cmd in zip(cmd_strs, cmds):
         p_prev = processes[-1][1] if processes else None
         p_curr = Popen(cmd, env=env, stdout=PIPE, stdin=p_prev.stdout if p_prev else None)
-        processes.append((cmd, p_curr))
+        processes.append((cmd_str, p_curr))
 
     p_last = processes[-1][1]
 
@@ -145,12 +147,12 @@ def pipe_commands_to_file(*cmds, **kwargs):
             f.write(data)
 
         # Close processes
-        for cmd, p in processes:
+        for cmd_str, p in processes:
             p.stdout.close()
             if p.wait() != 0:
-                raise BackupError('Command `{cmd}` returned non-zero exit status `{code}`'.format(
-                    cmd=' '.join(cmd),
-                    code=p.returncode,
+                raise BackupError('Command `{cmd_str}` returned non-zero exit status `{returncode}`'.format(
+                    cmd_str=cmd_str,
+                    returncode=p.returncode,
                 ))
 
 
