@@ -1,44 +1,36 @@
+from mock import patch, call
 import unittest
 
+from backupdb_utils.streams import err, bar, set_verbosity, SectionError, section
 
-class BackupDBCommandTestCase(unittest.TestCase):
-    def make_test_records(self):
-        """
-        Creates some test records.  Fixtures don't seem to work.
-        """
-        self.sqlite.create(name='TestSqlite1')
-        self.sqlite.create(name='TestSqlite2')
-        self.sqlite.create(name='TestSqlite3')
 
-        self.mysql.create(name='TestMysql1')
-        self.mysql.create(name='TestMysql2')
+class PatchStdErrTestCase(unittest.TestCase):
+    def setUp(self):
+        self.patcher = patch('sys.stderr')
+        self.mock_stderr = self.patcher.start()
 
-        self.postgresql.create(name='TestPostgresql1')
+    def tearDown(self):
+        self.patcher.stop()
 
-    def test_can_backup(self):
-        self.make_test_records()
+    def assertCallsEqual(self, *args):
+        self.assertEqual(self.mock_stderr.write.call_args_list, list(args))
 
-        self.assertEqual(self.sqlite.count(), 3)
-        self.assertEqual(self.mysql.count(), 2)
-        self.assertEqual(self.postgresql.count(), 1)
 
-        call_command('backupdb')
+class ErrTestCase(PatchStdErrTestCase):
+    def test_calling_err_writes_to_sys_stderr(self):
+        err('Richard Dean Anderson is...', newline=False)
+        err('MacGyver')
 
-        self.sqlite.all().delete()
-        self.mysql.all().delete()
-        self.postgresql.all().delete()
+        self.assertCallsEqual(
+            call('Richard Dean Anderson is...'),
+            call('MacGyver\n'),
+        )
 
-        self.assertEqual(self.sqlite.count(), 0)
-        self.assertEqual(self.mysql.count(), 0)
-        self.assertEqual(self.postgresql.count(), 0)
 
-    def test_can_restore_from_backup(self):
-        self.assertEqual(self.sqlite.count(), 0)
-        self.assertEqual(self.mysql.count(), 0)
-        self.assertEqual(self.postgresql.count(), 0)
+class BarTestCase(PatchStdErrTestCase):
+    def test_calling_bar_writes_a_bar_to_the_given_stream(self):
+        bar('Long ago, in a galaxy far away...', width=70)
 
-        call_command('restoredb')
-
-        self.assertEqual(self.sqlite.count(), 3)
-        self.assertEqual(self.mysql.count(), 2)
-        self.assertEqual(self.postgresql.count(), 1)
+        self.assertCallsEqual(
+            call('================== Long ago, in a galaxy far away... =================\n'),
+        )
