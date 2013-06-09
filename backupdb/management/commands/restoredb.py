@@ -35,6 +35,17 @@ class Command(BaseCommand):
                 'option is not necessary.'
             ),
         ),
+        make_option(
+            '--show-stderr',
+            action='store_true',
+            default=False,
+            help=(
+                'Display the output of stderr from programs which are run while '
+                'restoring databases.  These are programs such as `psql` or '
+                '`mysqldump`.  This can be useful for understanding how '
+                'restoration is failing in the case that it is.'
+            ),
+        ),
     )
 
     def handle(self, *args, **options):
@@ -46,6 +57,7 @@ class Command(BaseCommand):
 
         backup_name = options.get('backup_name')
         drop_tables = options.get('drop_tables')
+        show_stderr = options.get('show_stderr')
 
         set_verbosity(int(options['verbosity']))
 
@@ -78,7 +90,8 @@ class Command(BaseCommand):
                 restore_kwargs = {
                     'backup_file': backup_file,
                     'db_config': db_config,
-                    'drop': drop_tables,
+                    'drop_tables': drop_tables,
+                    'show_stderr': show_stderr,
                 }
 
                 # Run restore command
