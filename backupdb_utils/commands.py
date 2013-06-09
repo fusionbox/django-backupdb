@@ -129,7 +129,7 @@ def do_postgresql_restore(backup_file, db_config, drop=False):
         cmd_args += ['--port={0}'.format(port)]
     cmd_args += [db]
 
-    drop_sql = '"SELECT \'DROP TABLE IF EXISTS \\"\' || tablename || \'\\" CASCADE;\' FROM pg_tables WHERE schemaname = \'public\';"'
+    drop_sql = "SELECT 'DROP TABLE IF EXISTS \"' || tablename || '\" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"
 
     psql_cmd = ['psql'] + cmd_args
     gen_drop_sql_cmd = psql_cmd + ['-t', '-c', drop_sql]
