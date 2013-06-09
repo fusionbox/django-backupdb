@@ -4,6 +4,46 @@ import os
 from .streamtools import err
 
 
+def pipe_commands(cmds, extra_env=None):
+    """
+    Executes the list of commands piping each one into the next.
+    """
+    if extra_env:
+        env = os.environ.copy()
+        env.update(extra_env)
+        env_str = ' '.join("{0}='{1}'".format(k, v) for k, v in extra_env.items()) + ' '
+    else:
+        env = None
+        env_str = ''
+
+    cmd_strs = [
+        '{env_str}{cmd_str}'.format(env_str=env_str, cmd_str=' '.join(cmd))
+        for cmd in cmds
+    ]
+
+    err('* Running `{0}`'.format(' | '.join(cmd_strs)), verbosity=2)
+
+    # Start processes
+    num_cmds = len(cmds)
+    processes = []
+    for i, (cmd_str, cmd) in enumerate(zip(cmd_strs, cmds), 1):
+        p_prev = processes[-1][1] if processes else None
+
+        p_stdout = None if i == num_cmds else PIPE
+        p_stdin = p_prev.stdout if p_prev else None
+
+        p_curr = Popen(cmd, env=env, stdout=p_stdout, stdin=p_stdin)
+
+        processes.append((cmd_str, p_curr))
+
+    # Close processes
+    for cmd_str, p in processes:
+        if p.stdout:
+            p.stdout.close()
+        if p.wait() != 0:
+            raise CalledProcessError(cmd=cmd_str, returncode=p.returncode)
+
+
 def pipe_commands_to_file(cmds, path, extra_env=None):
     """
     Executes the list of commands piping each one into the next and writing
@@ -28,7 +68,8 @@ def pipe_commands_to_file(cmds, path, extra_env=None):
     processes = []
     for cmd_str, cmd in zip(cmd_strs, cmds):
         p_prev = processes[-1][1] if processes else None
-        p_curr = Popen(cmd, env=env, stdout=PIPE, stdin=p_prev.stdout if p_prev else None)
+        p_stdin = p_prev.stdout if p_prev else None
+        p_curr = Popen(cmd, env=env, stdout=PIPE, stdin=p_stdin)
         processes.append((cmd_str, p_curr))
 
     p_last = processes[-1][1]

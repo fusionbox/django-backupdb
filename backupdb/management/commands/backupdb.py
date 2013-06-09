@@ -1,88 +1,14 @@
-"""
-Adapted from http://djangosnippets.org/snippets/823/
-"""
 from optparse import make_option
 from subprocess import CalledProcessError
 import os
-import shlex
 import time
 
 from django.core.management.base import BaseCommand
 
-from backupdb_utils.processtools import pipe_commands_to_file
+from backupdb_utils.commands import ENGINE_OPTIONS, do_postgresql_backup
+from backupdb_utils.exceptions import BackupError
+from backupdb_utils.settings import BACKUP_DIR
 from backupdb_utils.streamtools import err, section, SectionError, set_verbosity
-
-
-def do_mysql_backup(backup_file, db_config):
-    db = db_config['NAME']
-    user = db_config['USER']
-    password = db_config.get('PASSWORD')
-    host = db_config.get('HOST')
-    port = db_config.get('PORT')
-
-    cmd = ['mysqldump', '--user={0}'.format(user)]
-    if password:
-        cmd += ['--password={0}'.format(password)]
-    if host:
-        cmd += ['--host={0}'.format(host)]
-    if port:
-        cmd += ['--port={0}'.format(port)]
-    cmd += [db]
-
-    pipe_commands_to_file([cmd, ['gzip']], path=backup_file)
-
-
-def do_postgresql_backup(backup_file, db_config, pg_dump_options=None):
-    db = db_config['NAME']
-    user = db_config['USER']
-    password = db_config.get('PASSWORD')
-    host = db_config.get('HOST')
-    port = db_config.get('PORT')
-
-    cmd = ['pg_dump', '--clean', '--username={0}'.format(user)]
-    if host:
-        cmd += ['--host={0}'.format(host)]
-    if port:
-        cmd += ['--port={0}'.format(port)]
-    if pg_dump_options:
-        cmd += shlex.split(pg_dump_options)
-    cmd += [db]
-
-    env = {'PGPASSWORD': password}
-    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, extra_env=env)
-
-
-def do_sqlite_backup(backup_file, db_config):
-    db_file = db_config['NAME']
-
-    cmd = ['cat', db_file]
-    pipe_commands_to_file([cmd, ['gzip']], path=backup_file)
-
-
-BACKUP_DIR = 'backups'
-
-ENGINE_OPTIONS = {
-    'django.db.backends.mysql': {
-        'backup_extension': 'mysql',
-        'backup_func': do_mysql_backup,
-    },
-    'django.db.backends.postgresql_psycopg2': {
-        'backup_extension': 'pgsql',
-        'backup_func': do_postgresql_backup,
-    },
-    'django.contrib.gis.db.backends.postgis': {
-        'backup_extension': 'pgsql',
-        'backup_func': do_postgresql_backup,
-    },
-    'django.db.backends.sqlite3': {
-        'backup_extension': 'sqlite',
-        'backup_func': do_sqlite_backup,
-    },
-}
-
-
-class BackupError(Exception):
-    pass
 
 
 class Command(BaseCommand):
@@ -137,7 +63,7 @@ class Command(BaseCommand):
                 )
                 backup_file = os.path.join(BACKUP_DIR, backup_base_name)
 
-                # Find and backup command and get kwargs
+                # Find backup command and get kwargs
                 backup_func = engine_options['backup_func']
                 backup_kwargs = {'backup_file': backup_file, 'db_config': db_config}
                 if backup_func is do_postgresql_backup:
