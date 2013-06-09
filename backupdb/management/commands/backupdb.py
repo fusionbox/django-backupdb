@@ -127,6 +127,44 @@ def do_command(cmd, db):
             ))
 
 
+def pipe_commands_to_file(*cmds, **kwargs):
+    """
+    Executes the list of commands piping each one into the next and writing
+    stdout of the last process into a file at the given path.
+    """
+    path = kwargs['path']
+    env = kwargs.get('env')
+
+    print 'saving output of:'
+    print ' | '.join(' '.join(c) for c in cmds)
+
+    # Make processes
+    processes = []
+    for cmd in cmds:
+        p_prev = processes[-1][1] if processes else None
+        p_curr = Popen(cmd, env=env, stdout=PIPE, stdin=p_prev.stdout if p_prev else None)
+        processes.append((cmd, p_curr))
+
+    p_last = processes[-1][1]
+
+    with open(path, 'w') as f:
+        # Write data into file
+        while True:
+            data = p_last.stdout.read(512 * 1024)
+            if len(data) == 0:
+                break
+            f.write(data)
+
+        # Close processes
+        for cmd, p in processes:
+            p.stdout.close()
+            if p.wait() != 0:
+                raise BackupError('Command `{cmd}` returned non-zero exit status `{code}`'.format(
+                    cmd=' '.join(cmd),
+                    code=p.returncode,
+                ))
+
+
 BACKUP_DIR = 'backups'
 
 ENGINE_OPTIONS = {
