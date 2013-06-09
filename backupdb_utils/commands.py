@@ -38,7 +38,7 @@ def require_backup_exists(func):
     def new_func(*args, **kwargs):
         backup_file = kwargs['backup_file']
         if not os.path.exists(backup_file):
-            raise RestoreError('Could not find file \'{0}\'!'.format(backup_file))
+            raise RestoreError("Could not find file '{0}'".format(backup_file))
         return func(*args, **kwargs)
     return new_func
 
