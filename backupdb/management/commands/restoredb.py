@@ -4,7 +4,7 @@ import os
 
 from django.core.management.base import BaseCommand, CommandError
 
-from backupdb_utils.commands import get_latest_timestamped_file, ENGINE_OPTIONS
+from backupdb_utils.commands import get_latest_timestamped_file, BACKUP_CONFIG
 from backupdb_utils.exceptions import RestoreError
 from backupdb_utils.settings import BACKUP_DIR
 from backupdb_utils.streamtools import err, set_verbosity, section, SectionError
@@ -66,14 +66,14 @@ class Command(BaseCommand):
         # Loop through databases
         for db_name, db_config in settings.DATABASES.items():
             with section("Restoring '{0}'...".format(db_name)):
-                # Get options for this engine type
+                # Get backup config for this engine type
                 engine = db_config['ENGINE']
-                engine_options = ENGINE_OPTIONS.get(engine)
-                if not engine_options:
+                backup_config = BACKUP_CONFIG.get(engine)
+                if not backup_config:
                     raise SectionError("! Restore for '{0}' engine not implemented".format(engine))
 
                 # Get backup file name
-                backup_extension = engine_options['backup_extension']
+                backup_extension = backup_config['backup_extension']
                 if backup_name:
                     backup_file = '{dir}/{db_name}-{backup_name}.{ext}.gz'.format(
                         dir=BACKUP_DIR,
@@ -88,7 +88,7 @@ class Command(BaseCommand):
                         raise SectionError('! ' + e.message)
 
                 # Find restore command and get kwargs
-                restore_func = engine_options['restore_func']
+                restore_func = backup_config['restore_func']
                 restore_kwargs = {
                     'backup_file': backup_file,
                     'db_config': db_config,

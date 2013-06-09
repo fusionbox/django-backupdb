@@ -5,7 +5,7 @@ import time
 
 from django.core.management.base import BaseCommand
 
-from backupdb_utils.commands import ENGINE_OPTIONS, do_postgresql_backup
+from backupdb_utils.commands import BACKUP_CONFIG, do_postgresql_backup
 from backupdb_utils.exceptions import BackupError
 from backupdb_utils.settings import BACKUP_DIR
 from backupdb_utils.streamtools import err, section, SectionError, set_verbosity
@@ -63,22 +63,22 @@ class Command(BaseCommand):
         # Loop through databases
         for db_name, db_config in settings.DATABASES.items():
             with section("Backing up '{0}'...".format(db_name)):
-                # Get options for this engine type
+                # Get backup config for this engine type
                 engine = db_config['ENGINE']
-                engine_options = ENGINE_OPTIONS.get(engine)
-                if not engine_options:
+                backup_config = BACKUP_CONFIG.get(engine)
+                if not backup_config:
                     raise SectionError("! Backup for '{0}' engine not implemented".format(engine))
 
                 # Get backup file name
                 backup_base_name = '{db_name}-{backup_name}.{backup_extension}.gz'.format(
                     db_name=db_name,
                     backup_name=backup_name,
-                    backup_extension=engine_options['backup_extension'],
+                    backup_extension=backup_config['backup_extension'],
                 )
                 backup_file = os.path.join(BACKUP_DIR, backup_base_name)
 
                 # Find backup command and get kwargs
-                backup_func = engine_options['backup_func']
+                backup_func = backup_config['backup_func']
                 backup_kwargs = {
                     'backup_file': backup_file,
                     'db_config': db_config,

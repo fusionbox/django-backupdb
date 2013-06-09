@@ -152,7 +152,7 @@ def do_sqlite_restore(backup_file, db_config, drop_tables=False, show_output=Fal
     pipe_commands_to_file([cmd, ['gunzip']], path=db_file, show_stderr=show_output)
 
 
-ENGINE_OPTIONS = {
+BACKUP_CONFIG = {
     'django.db.backends.mysql': {
         'backup_extension': 'mysql',
         'backup_func': do_mysql_backup,
