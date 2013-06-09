@@ -33,7 +33,7 @@ class StandardStreams(object):
         >>> err('Test', newline=False)
         Test>>>
         """
-        sys.stderr.write(msg + '\n' if newline else '')
+        sys.stderr.write(msg + ('\n' if newline else ''))
 
     @check_verbosity
     def bar(self, msg='', width=50, position=None, stream=sys.stderr):
