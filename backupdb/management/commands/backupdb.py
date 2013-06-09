@@ -32,6 +32,19 @@ class Command(BaseCommand):
                 '`--pg-dump-options="--inserts --no-owner"`'
             ),
         ),
+        make_option(
+            '--show-output',
+            action='store_true',
+            default=False,
+            help=(
+                'Display the output of stderr and stdout (apart from data which '
+                'is piped from one process to another) for processes that are '
+                'run while backing up databases.  These are command-line '
+                'programs such as `psql` or `mysql`.  This can be useful for '
+                'understanding how backups are failing in the case that they '
+                'are.'
+            ),
+        ),
     )
 
     def handle(self, *args, **options):
@@ -39,6 +52,7 @@ class Command(BaseCommand):
 
         current_time = time.strftime('%F-%s')
         backup_name = options['backup_name'] or current_time
+        show_output = options['show_output']
 
         set_verbosity(int(options['verbosity']))
 
@@ -65,7 +79,11 @@ class Command(BaseCommand):
 
                 # Find backup command and get kwargs
                 backup_func = engine_options['backup_func']
-                backup_kwargs = {'backup_file': backup_file, 'db_config': db_config}
+                backup_kwargs = {
+                    'backup_file': backup_file,
+                    'db_config': db_config,
+                    'show_output': show_output,
+                }
                 if backup_func is do_postgresql_backup:
                     backup_kwargs['pg_dump_options'] = options['pg_dump_options']
 
