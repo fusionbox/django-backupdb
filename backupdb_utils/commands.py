@@ -3,7 +3,7 @@ import os
 import shlex
 
 from backupdb_utils.exceptions import RestoreError
-from backupdb_utils.processtools import pipe_commands_to_file
+from backupdb_utils.processtools import pipe_commands, pipe_commands_to_file
 from backupdb_utils.settings import BACKUP_DIR, TIMESTAMP_PATTERN
 
 
@@ -90,76 +90,58 @@ def do_sqlite_backup(backup_file, db_config):
 
 
 @require_backup_exists
-def do_mysql_restore(backup_file, db, user, password=None, host=None, port=None, drop=False):
-    # Build args to restore command
-    restore_args = []
-    restore_args += ['--user={0}'.format(pipes.quote(user))]
+def do_mysql_restore(backup_file, db_config, drop=False):
+    db = db_config['NAME']
+    user = db_config['USER']
+    password = db_config.get('PASSWORD')
+    host = db_config.get('HOST')
+    port = db_config.get('PORT')
+
+    cmd_args = ['--user={0}'.format(user)]
     if password:
-        restore_args += ['--password={0}'.format(pipes.quote(password))]
+        cmd_args += ['--password={0}'.format(password)]
     if host:
-        restore_args += ['--host={0}'.format(pipes.quote(host))]
+        cmd_args += ['--host={0}'.format(host)]
     if port:
-        restore_args += ['--port={0}'.format(pipes.quote(port))]
-    restore_args += [pipes.quote(db)]
-    restore_args = ' '.join(restore_args)
+        cmd_args += ['--port={0}'.format(port)]
+    cmd_args += [db]
 
-    # Sanitize other args
-    backup_file = pipes.quote(backup_file)
+    dump_cmd = ['mysqldump'] + cmd_args + ['--no-data']
+    mysql_cmd = ['mysql'] + cmd_args
 
-    # Build commands
-    drop_cmd = 'mysqldump {restore_args} --no-data | grep "^DROP" | mysql {restore_args}'.format(
-        restore_args=restore_args,
-    )
-    restore_cmd = 'cat {backup_file} | gunzip | mysql {restore_args}'.format(
-        drop_cmd=drop_cmd,
-        backup_file=backup_file,
-        restore_args=restore_args,
-    )
-
-    # Execute
     if drop:
-        self.do_command(drop_cmd, 'clearing', db)
-    self.do_command(restore_cmd, 'restoring', db)
+        pipe_commands([dump_cmd, ['grep', '^DROP'], mysql_cmd])
+    pipe_commands([['cat', backup_file], ['gunzip'], mysql_cmd])
 
 
 @require_backup_exists
-def do_postgresql_restore(backup_file, db, user, password=None, host=None, port=None, drop=False):
-    # Build args to restore command
-    restore_args = []
-    restore_args += ['--username={0}'.format(pipes.quote(user))]
+def do_postgresql_restore(backup_file, db_config, drop=False):
+    db = db_config['NAME']
+    user = db_config['USER']
+    password = db_config.get('PASSWORD')
+    host = db_config.get('HOST')
+    port = db_config.get('PORT')
+
+    cmd_args = ['--username={0}'.format(user)]
     if host:
-        restore_args += ['--host={0}'.format(pipes.quote(host))]
+        cmd_args += ['--host={0}'.format(host)]
     if port:
-        restore_args += ['--port={0}'.format(pipes.quote(port))]
-    restore_args += [pipes.quote(db)]
-    restore_args = ' '.join(restore_args)
+        cmd_args += ['--port={0}'.format(port)]
+    cmd_args += [db]
 
-    pgpassword_env = 'PGPASSWORD={0} '.format(password) if password else ''
-
-    # Sanitize other args
-    backup_file = pipes.quote(backup_file)
-
-    # Build commands
     drop_sql = '"SELECT \'DROP TABLE IF EXISTS \\"\' || tablename || \'\\" CASCADE;\' FROM pg_tables WHERE schemaname = \'public\';"'
-    drop_cmd = '{pgpassword_env}psql {restore_args} -t -c {drop_sql} | {pgpassword_env}psql {restore_args}'.format(
-        pgpassword_env=pgpassword_env,
-        restore_args=restore_args,
-        drop_sql=drop_sql,
-    )
-    restore_cmd = 'cat {backup_file} | gunzip | {pgpassword_env}psql {restore_args}'.format(
-        backup_file=backup_file,
-        pgpassword_env=pgpassword_env,
-        restore_args=restore_args,
-    )
 
-    # Execute
+    psql_cmd = ['psql'] + cmd_args
+    gen_drop_sql_cmd = psql_cmd + ['-t', '-c', drop_sql]
+
+    env = {'PGPASSWORD': password}
     if drop:
-        self.do_command(drop_cmd, 'dropping', db)
-    self.do_command(restore_cmd, 'restoring', db)
+        pipe_commands([gen_drop_sql_cmd, psql_cmd], extra_env=env)
+    pipe_commands([['cat', backup_file], ['gunzip'], psql_cmd], extra_env=env)
 
 
 @require_backup_exists
-def do_sqlite_restore(backup_file, db_config):
+def do_sqlite_restore(backup_file, db_config, drop=False):
     db_file = db_config['NAME']
 
     cmd = ['cat', backup_file]
