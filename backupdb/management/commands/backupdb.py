@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand
 from backupdb_utils.commands import BACKUP_CONFIG, do_postgresql_backup
 from backupdb_utils.exceptions import BackupError
 from backupdb_utils.settings import BACKUP_DIR
-from backupdb_utils.streamtools import err, section, SectionError, set_verbosity
+from backupdb_utils.streams import err, section, SectionError, set_verbosity
 
 
 class Command(BaseCommand):

@@ -1,7 +1,7 @@
 from subprocess import Popen, PIPE, CalledProcessError
 import os
 
-from .streamtools import err
+from .streams import err
 
 
 def pipe_commands(cmds, extra_env=None, show_stderr=False, show_last_stdout=False):

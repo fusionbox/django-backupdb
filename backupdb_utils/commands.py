@@ -1,33 +1,8 @@
-import glob
 import os
 import shlex
 
-from backupdb_utils.exceptions import RestoreError
-from backupdb_utils.processtools import pipe_commands, pipe_commands_to_file
-from backupdb_utils.settings import BACKUP_DIR, TIMESTAMP_PATTERN
-
-
-def get_latest_timestamped_file(ext):
-    """
-    Gets the latest timestamped backup file name with the given database type
-    extension.
-    """
-    # Make glob pattern
-    pattern = '{dir}/{pattern}.{ext}.gz'.format(
-        dir=BACKUP_DIR,
-        pattern=TIMESTAMP_PATTERN,
-        ext=ext,
-    )
-
-    # Find files
-    l = glob.glob(pattern)
-    l.sort()
-    l.reverse()
-
-    if not l:
-        raise RestoreError("No backups found matching '{0}' pattern".format(pattern))
-
-    return l[0]
+from .exceptions import RestoreError
+from .processes import pipe_commands, pipe_commands_to_file
 
 
 def require_backup_exists(func):
