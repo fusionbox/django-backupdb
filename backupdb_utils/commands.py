@@ -7,8 +7,8 @@ from .processes import pipe_commands, pipe_commands_to_file
 
 def require_backup_exists(func):
     """
-    Requires that the file referred to by the `backup_file` argument exists in
-    the file system before running the decorated function.
+    Requires that the file referred to by `backup_file` exists in the file
+    system before running the decorated function.
     """
     def new_func(*args, **kwargs):
         backup_file = kwargs['backup_file']
