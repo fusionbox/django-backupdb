@@ -185,7 +185,7 @@ class Command(BaseCommand):
         if not os.path.exists(BACKUP_DIR):
             os.makedirs(BACKUP_DIR)
 
-        # Loop through databases and backup
+        # Loop through databases
         for db_name, db_config in settings.DATABASES.items():
             print '========== Backing up \'{0}\'...'.format(db_name)
 
