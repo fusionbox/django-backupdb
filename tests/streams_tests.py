@@ -98,7 +98,7 @@ class SetVerbosityTestCase(PatchStandardStreamsTestCase):
 
 
 class SectionTestCase(PatchStandardStreamsTestCase):
-    def test_code_in_section_contexts_(self):
+    def test_beginning_and_ending_bars_surround_code_executed_in_a_section_context(self):
         with section('Long ago, in a galaxy far away...'):
             err('Luke...I am your fathaa...')
             err('NOOO!!!')
@@ -108,4 +108,14 @@ class SectionTestCase(PatchStandardStreamsTestCase):
             call('Luke...I am your fathaa...\n'),
             call('NOOO!!!\n'),
             call('\\\\============================ ...done! ============================//\n'),
+        )
+
+    def test_raising_a_section_error_in_a_section_context_changes_the_ending_bar_caption(self):
+        with section('Long ago, in a galaxy far away...'):
+            raise SectionError('Mesa called Jar-Jar Binks. Mesa your humble servant.')
+
+        self.assertStdErrCallsEqual(
+            call('//================ Long ago, in a galaxy far away... ===============\\\\\n'),
+            call('Mesa called Jar-Jar Binks. Mesa your humble servant.\n'),
+            call('\\\\=========================== ...skipped. ==========================//\n'),
         )
