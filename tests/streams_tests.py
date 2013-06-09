@@ -73,3 +73,25 @@ class BarTestCase(PatchStandardStreamsTestCase):
         self.assertStdOutCallsEqual(
             call('== test ==\n'),
         )
+
+
+class SetVerbosityTestCase(PatchStandardStreamsTestCase):
+    def test_messages_higher_than_current_verbosity_level_are_ignored(self):
+        set_verbosity(0)
+        err('Shh...', verbosity=1)
+
+        self.assertStdErrCallsEqual()
+
+    def test_messages_lower_than_or_equal_to_current_verbosity_level_are_printed(self):
+        set_verbosity(0)
+        err('Shh...', verbosity=1)
+        set_verbosity(1)
+        err('...be vewy vewy kwiet...', verbosity=1)
+        err("...I'm hunting wabbit...", verbosity=2)
+        set_verbosity(2)
+        err('FWEEZE WABBIT!', verbosity=2)
+
+        self.assertStdErrCallsEqual(
+            call('...be vewy vewy kwiet...\n'),
+            call('FWEEZE WABBIT!\n'),
+        )
