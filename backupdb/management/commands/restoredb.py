@@ -1,33 +1,13 @@
-"""
-Adapted from http://djangosnippets.org/snippets/823/
-"""
 from optparse import make_option
 from subprocess import Popen, PIPE
-import glob
 import os
 import pipes
 
 from django.core.management.base import BaseCommand, CommandError
 
-from .backupdb import BACKUP_DIR
-
-
-TIMESTAMP_PATTERN = '*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
-
-
-class RestoreError(Exception):
-    pass
-
-
-def get_latest_file(pattern):
-    l = glob.glob(pattern)
-    l.sort()
-    l.reverse()
-
-    if not l:
-        raise CommandError('No backups found matching "{0}" pattern!'.format(pattern))
-
-    return l[0]
+from backupdb_utils.commands import get_latest_timestamped_file
+from backupdb_utils.exceptions import RestoreError
+from backupdb_utils.settings import BACKUP_DIR
 
 
 def require_backup_exists(func):
@@ -79,7 +59,7 @@ class Command(BaseCommand):
                 if backup_name:
                     backup_file = '{0}/{1}-{2}.mysql.gz'.format(BACKUP_DIR, database_name, backup_name)
                 else:
-                    backup_file = get_latest_file('{0}/{1}.mysql.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
+                    backup_file = get_latest_timestamped_file('mysql')
 
                 restore_kwargs = {
                     'backup_file': backup_file,
@@ -98,7 +78,7 @@ class Command(BaseCommand):
                 if backup_name:
                     backup_file = '{0}/{1}-{2}.pgsql.gz'.format(BACKUP_DIR, database_name, backup_name)
                 else:
-                    backup_file = get_latest_file('{0}/{1}.pgsql.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
+                    backup_file = get_latest_timestamped_file('pgsql')
 
                 restore_kwargs = {
                     'backup_file': backup_file,
@@ -117,7 +97,7 @@ class Command(BaseCommand):
                 if backup_name:
                     backup_file = '{0}/{1}-{2}.sqlite.gz'.format(BACKUP_DIR, database_name, backup_name)
                 else:
-                    backup_file = get_latest_file('{0}/{1}.sqlite.gz'.format(BACKUP_DIR, TIMESTAMP_PATTERN))
+                    backup_file = get_latest_timestamped_file('sqlite')
 
                 restore_kwargs = {
                     'backup_file': backup_file,
