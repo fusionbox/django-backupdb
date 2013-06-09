@@ -78,7 +78,7 @@ def pipe_commands_to_file(cmds, path, extra_env=None):
     sys.stderr.write('Saving output of:\n')
     sys.stderr.write(' | '.join(cmd_strs) + '\n')
 
-    # Make processes
+    # Start processes
     processes = []
     for cmd_str, cmd in zip(cmd_strs, cmds):
         p_prev = processes[-1][1] if processes else None
@@ -88,7 +88,7 @@ def pipe_commands_to_file(cmds, path, extra_env=None):
     p_last = processes[-1][1]
 
     with open(path, 'w') as f:
-        # Write data into file
+        # Write data to file in chunks (works for arbitrarily large files)
         while True:
             data = p_last.stdout.read(512 * 1024)
             if len(data) == 0:
