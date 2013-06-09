@@ -104,6 +104,13 @@ class SectionError(Exception):
 
 @contextlib.contextmanager
 def section(msg):
+    """
+    Context manager that prints a top bar to stderr upon entering and a bottom
+    bar upon exiting.  The caption of the top bar is specified by the `msg`
+    argument.  The caption of the bottom bar is '...done!' if the context
+    manager exits successfully.  If a SectionError is raised inside of the
+    context manager, the its message becomes the caption of the bottom bar.
+    """
     bar(msg, position='top')
     try:
         yield
