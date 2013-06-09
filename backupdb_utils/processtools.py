@@ -4,7 +4,7 @@ import os
 from .streamtools import err
 
 
-def pipe_commands(cmds, extra_env=None, show_stderr=False):
+def pipe_commands(cmds, extra_env=None, show_stderr=False, show_last_stdout=False):
     """
     Executes the list of commands piping each one into the next.
     """
@@ -30,7 +30,10 @@ def pipe_commands(cmds, extra_env=None, show_stderr=False):
         for i, (cmd_str, cmd) in enumerate(zip(cmd_strs, cmds), 1):
             p_prev = processes[-1][1] if processes else None
 
-            p_stdout = None if i == num_cmds else PIPE
+            if i == num_cmds:
+                p_stdout = None if show_last_stdout else NULL
+            else:
+                p_stdout = PIPE
             p_stdin = p_prev.stdout if p_prev else None
             p_stderr = None if show_stderr else NULL
 
