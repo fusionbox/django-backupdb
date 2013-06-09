@@ -5,6 +5,7 @@ from optparse import make_option
 from subprocess import Popen, PIPE
 import os
 import pipes
+import shlex
 import time
 
 from django.core.management.base import BaseCommand
@@ -55,37 +56,25 @@ def do_postgresql_backup(backup_file, db_config, pg_dump_options=None):
     host = db_config.get('HOST')
     port = db_config.get('PORT')
 
-    # Build args to dump command
-    args = ['--clean']
-    if pg_dump_options:
-        args += [pg_dump_options]
-    args += ['--username={0}'.format(pipes.quote(user))]
+    dump_cmd = ['pg_dump', '--clean', '--username={0}'.format(user)]
     if host:
-        args += ['--host={0}'.format(pipes.quote(host))]
+        dump_cmd += ['--host={0}'.format(host)]
     if port:
-        args += ['--port={0}'.format(pipes.quote(port))]
-    args += [pipes.quote(db)]
-    args = ' '.join(args)
+        dump_cmd += ['--port={0}'.format(port)]
+    if pg_dump_options:
+        dump_cmd += shlex.split(pg_dump_options)
+    dump_cmd += [db]
 
-    pgpassword_env = 'PGPASSWORD={0} '.format(password) if password else ''
+    gzip_cmd = ['gzip']
 
-    # Build filenames
-    backup_file = pipes.quote(backup_file)
+    env = os.environ.copy()
+    env['PGPASSWORD'] = password
 
-    # Build command
-    cmd = '{pgpassword_env}pg_dump {args} | gzip > {backup_file}'.format(
-        pgpassword_env=pgpassword_env,
-        args=args,
-        backup_file=backup_file,
-    )
+    pipe_commands_to_file(dump_cmd, gzip_cmd, path=backup_file, env=env)
 
-    # Execute
-    do_command(cmd, db)
-
-    print 'Backed up {db}; Load with `cat {backup_file} | gunzip | psql {args}`'.format(
+    print 'Back up of `{db}` saved in `{backup_file}`.'.format(
         db=db,
         backup_file=backup_file,
-        args=args,
     )
 
 
