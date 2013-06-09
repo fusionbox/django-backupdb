@@ -1,17 +1,7 @@
-from django.core.management import call_command
-from django.utils import unittest
-
-from .models import TestModel
+import unittest
 
 
 class BackupDBCommandTestCase(unittest.TestCase):
-    multi_db = True
-
-    def setUp(self):
-        self.sqlite = TestModel.objects.using('default')
-        self.mysql = TestModel.objects.using('mysql')
-        self.postgresql = TestModel.objects.using('postgresql')
-
     def make_test_records(self):
         """
         Creates some test records.  Fixtures don't seem to work.
