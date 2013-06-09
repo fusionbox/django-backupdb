@@ -55,7 +55,7 @@ class Command(BaseCommand):
                 if not engine_options:
                     raise SectionError("! Backup for '{0}' engine not implemented".format(engine))
 
-                # Create backup file name
+                # Get backup file name
                 backup_base_name = '{db_name}-{backup_name}.{backup_extension}.gz'.format(
                     db_name=db_name,
                     backup_name=backup_name,
