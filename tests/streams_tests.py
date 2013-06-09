@@ -95,3 +95,17 @@ class SetVerbosityTestCase(PatchStandardStreamsTestCase):
             call('...be vewy vewy kwiet...\n'),
             call('FWEEZE WABBIT!\n'),
         )
+
+
+class SectionTestCase(PatchStandardStreamsTestCase):
+    def test_code_in_section_contexts_(self):
+        with section('Long ago, in a galaxy far away...'):
+            err('Luke...I am your fathaa...')
+            err('NOOO!!!')
+
+        self.assertStdErrCallsEqual(
+            call('//================ Long ago, in a galaxy far away... ===============\\\\\n'),
+            call('Luke...I am your fathaa...\n'),
+            call('NOOO!!!\n'),
+            call('\\\\============================ ...done! ============================//\n'),
+        )
