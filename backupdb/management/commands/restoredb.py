@@ -36,14 +36,16 @@ class Command(BaseCommand):
             ),
         ),
         make_option(
-            '--show-stderr',
+            '--show-output',
             action='store_true',
             default=False,
             help=(
-                'Display the output of stderr from programs which are run while '
-                'restoring databases.  These are programs such as `psql` or '
-                '`mysqldump`.  This can be useful for understanding how '
-                'restoration is failing in the case that it is.'
+                'Display the output of stderr and stdout (apart from data which '
+                'is piped from one process to another) for processes that are '
+                'run while restoring databases.  These are command-line '
+                'programs such as `psql` or `mysql`.  This can be useful for '
+                'understanding how restoration is failing in the case that it '
+                'is.'
             ),
         ),
     )
@@ -55,9 +57,9 @@ class Command(BaseCommand):
         if not os.path.exists(BACKUP_DIR):
             raise CommandError('Backup dir \'{0}\' does not exist!'.format(BACKUP_DIR))
 
-        backup_name = options.get('backup_name')
-        drop_tables = options.get('drop_tables')
-        show_stderr = options.get('show_stderr')
+        backup_name = options['backup_name']
+        drop_tables = options['drop_tables']
+        show_output = options['show_output']
 
         set_verbosity(int(options['verbosity']))
 
@@ -91,7 +93,7 @@ class Command(BaseCommand):
                     'backup_file': backup_file,
                     'db_config': db_config,
                     'drop_tables': drop_tables,
-                    'show_stderr': show_stderr,
+                    'show_output': show_output,
                 }
 
                 # Run restore command

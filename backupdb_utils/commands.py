@@ -43,7 +43,7 @@ def require_backup_exists(func):
     return new_func
 
 
-def do_mysql_backup(backup_file, db_config, show_stderr=False):
+def do_mysql_backup(backup_file, db_config, show_output=False):
     db = db_config['NAME']
     user = db_config['USER']
     password = db_config.get('PASSWORD')
@@ -59,10 +59,10 @@ def do_mysql_backup(backup_file, db_config, show_stderr=False):
         cmd += ['--port={0}'.format(port)]
     cmd += [db]
 
-    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, show_stderr=show_stderr)
+    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, show_stderr=show_output)
 
 
-def do_postgresql_backup(backup_file, db_config, pg_dump_options=None, show_stderr=False):
+def do_postgresql_backup(backup_file, db_config, pg_dump_options=None, show_output=False):
     db = db_config['NAME']
     user = db_config['USER']
     password = db_config.get('PASSWORD')
@@ -79,18 +79,18 @@ def do_postgresql_backup(backup_file, db_config, pg_dump_options=None, show_stde
     cmd += [db]
 
     env = {'PGPASSWORD': password} if password else None
-    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, extra_env=env, show_stderr=show_stderr)
+    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, extra_env=env, show_stderr=show_output)
 
 
-def do_sqlite_backup(backup_file, db_config, show_stderr=False):
+def do_sqlite_backup(backup_file, db_config, show_output=False):
     db_file = db_config['NAME']
 
     cmd = ['cat', db_file]
-    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, show_stderr=show_stderr)
+    pipe_commands_to_file([cmd, ['gzip']], path=backup_file, show_stderr=show_output)
 
 
 @require_backup_exists
-def do_mysql_restore(backup_file, db_config, drop_tables=False, show_stderr=False):
+def do_mysql_restore(backup_file, db_config, drop_tables=False, show_output=False):
     db = db_config['NAME']
     user = db_config['USER']
     password = db_config.get('PASSWORD')
@@ -109,7 +109,7 @@ def do_mysql_restore(backup_file, db_config, drop_tables=False, show_stderr=Fals
     dump_cmd = ['mysqldump'] + cmd_args + ['--no-data']
     mysql_cmd = ['mysql'] + cmd_args
 
-    kwargs = {'show_stderr': show_stderr, 'show_last_stdout': show_stderr}
+    kwargs = {'show_stderr': show_output, 'show_last_stdout': show_output}
 
     if drop_tables:
         pipe_commands([dump_cmd, ['grep', '^DROP'], mysql_cmd], **kwargs)
@@ -117,7 +117,7 @@ def do_mysql_restore(backup_file, db_config, drop_tables=False, show_stderr=Fals
 
 
 @require_backup_exists
-def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_stderr=False):
+def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_output=False):
     db = db_config['NAME']
     user = db_config['USER']
     password = db_config.get('PASSWORD')
@@ -137,7 +137,7 @@ def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_stderr
     gen_drop_sql_cmd = psql_cmd + ['-t', '-c', drop_sql]
 
     env = {'PGPASSWORD': password} if password else None
-    kwargs = {'extra_env': env, 'show_stderr': show_stderr, 'show_last_stdout': show_stderr}
+    kwargs = {'extra_env': env, 'show_stderr': show_output, 'show_last_stdout': show_output}
 
     if drop_tables:
         pipe_commands([gen_drop_sql_cmd, psql_cmd], **kwargs)
@@ -145,11 +145,11 @@ def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_stderr
 
 
 @require_backup_exists
-def do_sqlite_restore(backup_file, db_config, drop_tables=False, show_stderr=False):
+def do_sqlite_restore(backup_file, db_config, drop_tables=False, show_output=False):
     db_file = db_config['NAME']
 
     cmd = ['cat', backup_file]
-    pipe_commands_to_file([cmd, ['gunzip']], path=db_file, show_stderr=False)
+    pipe_commands_to_file([cmd, ['gunzip']], path=db_file, show_stderr=show_output)
 
 
 ENGINE_OPTIONS = {
