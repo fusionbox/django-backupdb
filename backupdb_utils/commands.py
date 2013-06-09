@@ -25,7 +25,7 @@ def get_latest_timestamped_file(ext):
     l.reverse()
 
     if not l:
-        raise RestoreError('No backups found matching "{0}" pattern!'.format(pattern))
+        raise RestoreError("No backups found matching '{0}' pattern".format(pattern))
 
     return l[0]
 
