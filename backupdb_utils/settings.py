@@ -9,9 +9,7 @@ from .commands import (
 
 
 BACKUP_DIR = 'backups'
-
-TIMESTAMP_PATTERN = '*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
-
+BACKUP_TIMESTAMP_PATTERN = '*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
 BACKUP_CONFIG = {
     'django.db.backends.mysql': {
         'backup_extension': 'mysql',

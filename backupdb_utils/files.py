@@ -1,7 +1,7 @@
 import glob
 
 from .exceptions import RestoreError
-from .settings import BACKUP_DIR, TIMESTAMP_PATTERN
+from .settings import BACKUP_DIR, BACKUP_TIMESTAMP_PATTERN
 
 
 def get_latest_timestamped_file(ext):
@@ -12,7 +12,7 @@ def get_latest_timestamped_file(ext):
     # Make glob pattern
     pattern = '{dir}/{pattern}.{ext}.gz'.format(
         dir=BACKUP_DIR,
-        pattern=TIMESTAMP_PATTERN,
+        pattern=BACKUP_TIMESTAMP_PATTERN,
         ext=ext,
     )
 
