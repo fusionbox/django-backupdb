@@ -4,7 +4,6 @@ Adapted from http://djangosnippets.org/snippets/823/
 from optparse import make_option
 from subprocess import Popen, PIPE
 import os
-import pipes
 import shlex
 import time
 import sys
@@ -19,35 +18,16 @@ def do_mysql_backup(backup_file, db_config):
     host = db_config.get('HOST')
     port = db_config.get('PORT')
 
-    # Build args to dump command
-    args = []
-    args += ['--user={0}'.format(pipes.quote(user))]
+    cmd = ['mysqldump', '--user={0}'.format(user)]
     if password:
-        args += ['--password={0}'.format(pipes.quote(password))]
+        cmd += ['--password={0}'.format(password)]
     if host:
-        args += ['--host={0}'.format(pipes.quote(host))]
+        cmd += ['--host={0}'.format(host)]
     if port:
-        args += ['--port={0}'.format(pipes.quote(port))]
-    args += [pipes.quote(db)]
-    args = ' '.join(args)
+        cmd += ['--port={0}'.format(port)]
+    cmd += [db]
 
-    # Build filename
-    backup_file = pipes.quote(backup_file)
-
-    # Build command
-    cmd = 'mysqldump {args} | gzip > {backup_file}'.format(
-        args=args,
-        backup_file=backup_file,
-    )
-
-    # Execute
-    do_command(cmd, db)
-
-    print 'Backed up {db}; Load with `cat {backup_file} | gunzip | mysql {args}`'.format(
-        db=db,
-        backup_file=backup_file,
-        args=args,
-    )
+    pipe_commands_to_file([cmd, ['gzip']], path=backup_file)
 
 
 def do_postgresql_backup(backup_file, db_config, pg_dump_options=None):
@@ -71,41 +51,10 @@ def do_postgresql_backup(backup_file, db_config, pg_dump_options=None):
 
 
 def do_sqlite_backup(backup_file, db_config):
-    # Build filenames
-    backup_file = pipes.quote(backup_file)
-    db_file = pipes.quote(db_config['NAME'])
+    db_file = db_config['NAME']
 
-    # Build command
-    cmd = 'gzip < {db_file} > {backup_file}'.format(
-        db_file=db_file,
-        backup_file=backup_file,
-    )
-
-    # Execute
-    do_command(cmd, db_file)
-
-    print 'Backed up {db_file}; Load with `cat {backup_file} | gunzip > {db_file}`'.format(
-        db_file=db_file,
-        backup_file=backup_file,
-    )
-
-
-def do_command(cmd, db):
-    """
-    Executes a command and prints a status message.
-    """
-    print 'executing:'
-    print cmd
-
-    with open('/dev/null', 'w') as FNULL:
-        process = Popen(cmd, stdin=PIPE, stdout=FNULL, stderr=FNULL, shell=True)
-        process.wait()
-
-        if process.returncode != 0:
-            raise BackupError('Error code {code} while backing up database \'{db}\'!'.format(
-                code=process.returncode,
-                db=db,
-            ))
+    cmd = ['cat', db_file]
+    pipe_commands_to_file([cmd, ['gzip']], path=backup_file)
 
 
 def pipe_commands_to_file(cmds, path, extra_env=None):
@@ -242,6 +191,10 @@ class Command(BaseCommand):
 
             try:
                 backup_func(**backup_kwargs)
+                print 'Backup of `{db}` saved in `{backup_file}`.'.format(
+                    db=db_name,
+                    backup_file=backup_file,
+                )
                 print '========== ...done!\n'
             except BackupError as e:
                 print e.message
