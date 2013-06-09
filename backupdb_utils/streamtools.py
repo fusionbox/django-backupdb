@@ -36,7 +36,7 @@ class StandardStreams(object):
         sys.stderr.write(msg + ('\n' if newline else ''))
 
     @check_verbosity
-    def bar(self, msg='', width=50, position=None, stream=sys.stderr):
+    def bar(self, msg='', width=70, position=None, stream=sys.stderr):
         """
         Prints a bar text effect to the standard stream specified by `stream`.
 
