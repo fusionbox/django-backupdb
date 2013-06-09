@@ -98,8 +98,17 @@ bar = standard_streams.bar
 set_verbosity = standard_streams.set_verbosity
 
 
+class SectionError(Exception):
+    pass
+
+
 @contextlib.contextmanager
 def section(msg):
     bar(msg, position='top')
-    yield
-    bar('...done!', position='bottom')
+    try:
+        yield
+    except SectionError as e:
+        err(e.message)
+        bar('...skipped.', position='bottom')
+    else:
+        bar('...done!', position='bottom')
