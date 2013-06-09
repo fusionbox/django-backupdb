@@ -78,7 +78,7 @@ def do_postgresql_backup(backup_file, db_config, pg_dump_options=None):
         cmd += shlex.split(pg_dump_options)
     cmd += [db]
 
-    env = {'PGPASSWORD': password}
+    env = {'PGPASSWORD': password} if password else None
     pipe_commands_to_file([cmd, ['gzip']], path=backup_file, extra_env=env)
 
 
@@ -134,7 +134,7 @@ def do_postgresql_restore(backup_file, db_config, drop=False):
     psql_cmd = ['psql'] + cmd_args
     gen_drop_sql_cmd = psql_cmd + ['-t', '-c', drop_sql]
 
-    env = {'PGPASSWORD': password}
+    env = {'PGPASSWORD': password} if password else None
     if drop:
         pipe_commands([gen_drop_sql_cmd, psql_cmd], extra_env=env)
     pipe_commands([['cat', backup_file], ['gunzip'], psql_cmd], extra_env=env)
