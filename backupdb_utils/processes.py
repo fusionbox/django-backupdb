@@ -29,15 +29,15 @@ def pipe_commands(cmds, extra_env=None, show_stderr=False, show_last_stdout=Fals
     env = extend_env(extra_env) if extra_env else None
     env_str = (get_env_str(extra_env) + ' ') if extra_env else ''
     cmd_strs = [env_str + ' '.join(cmd) for cmd in cmds]
-    num_cmds = len(cmds)
 
     err('* Running `{0}`'.format(' | '.join(cmd_strs)), verbosity=1)
 
     with open('/dev/null', 'w') as NULL:
         # Start processes
         processes = []
-        for i, (cmd_str, cmd) in enumerate(zip(cmd_strs, cmds), 1):
-            if i == num_cmds:
+        last_i = len(cmds) - 1
+        for i, (cmd_str, cmd) in enumerate(zip(cmd_strs, cmds)):
+            if i == last_i:
                 p_stdout = None if show_last_stdout else NULL
             else:
                 p_stdout = PIPE
