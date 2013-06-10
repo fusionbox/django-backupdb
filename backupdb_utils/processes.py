@@ -31,7 +31,7 @@ def pipe_commands(cmds, extra_env=None, show_stderr=False, show_last_stdout=Fals
     cmd_strs = [env_str + ' '.join(cmd) for cmd in cmds]
     num_cmds = len(cmds)
 
-    err('* Running `{0}`'.format(' | '.join(cmd_strs)), verbosity=2)
+    err('* Running `{0}`'.format(' | '.join(cmd_strs)), verbosity=1)
 
     with open('/dev/null', 'w') as NULL:
         # Start processes
@@ -64,7 +64,7 @@ def pipe_commands_to_file(cmds, path, extra_env=None, show_stderr=False):
     env_str = (get_env_str(extra_env) + ' ') if extra_env else ''
     cmd_strs = [env_str + ' '.join(cmd) for cmd in cmds]
 
-    err('* Saving output of `{0}`'.format(' | '.join(cmd_strs)), verbosity=2)
+    err('* Saving output of `{0}`'.format(' | '.join(cmd_strs)), verbosity=1)
 
     with open('/dev/null', 'w') as NULL:
         # Start processes
