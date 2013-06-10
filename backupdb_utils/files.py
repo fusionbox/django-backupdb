@@ -9,14 +9,12 @@ def get_latest_timestamped_file(ext):
     Gets the latest timestamped backup file name with the given database type
     extension.
     """
-    # Make glob pattern
     pattern = '{dir}/{pattern}.{ext}.gz'.format(
         dir=BACKUP_DIR,
         pattern=BACKUP_TIMESTAMP_PATTERN,
         ext=ext,
     )
 
-    # Find files
     l = glob.glob(pattern)
     l.sort()
     l.reverse()
