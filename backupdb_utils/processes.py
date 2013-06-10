@@ -44,8 +44,8 @@ def pipe_commands(cmds, extra_env=None, show_stderr=False, show_last_stdout=Fals
             p_stdin = processes[-1][1].stdout if processes else None
             p_stderr = None if show_stderr else NULL
 
-            p_curr = Popen(cmd, env=env, stdout=p_stdout, stdin=p_stdin, stderr=p_stderr)
-            processes.append((cmd_str, p_curr))
+            p = Popen(cmd, env=env, stdout=p_stdout, stdin=p_stdin, stderr=p_stderr)
+            processes.append((cmd_str, p))
 
         # Close processes
         for cmd_str, p in processes:
@@ -73,8 +73,8 @@ def pipe_commands_to_file(cmds, path, extra_env=None, show_stderr=False):
             p_stdin = processes[-1][1].stdout if processes else None
             p_stderr = None if show_stderr else NULL
 
-            p_curr = Popen(cmd, env=env, stdout=PIPE, stdin=p_stdin, stderr=p_stderr)
-            processes.append((cmd_str, p_curr))
+            p = Popen(cmd, env=env, stdout=PIPE, stdin=p_stdin, stderr=p_stderr)
+            processes.append((cmd_str, p))
 
         p_last = processes[-1][1]
 
