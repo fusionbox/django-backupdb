@@ -5,12 +5,20 @@ from .streams import err
 
 
 def extend_env(extra_env):
+    """
+    Copies and extends the current environment with the values present in
+    `extra_env`.
+    """
     env = os.environ.copy()
     env.update(extra_env)
     return env
 
 
 def get_env_str(env):
+    """
+    Gets a string representation of a dict as though it contained environment
+    variable values.
+    """
     return ' '.join("{0}='{1}'".format(k, v) for k, v in env.items())
 
 
