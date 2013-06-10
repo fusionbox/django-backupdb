@@ -103,4 +103,4 @@ class Command(BaseCommand):
                         db=db_name,
                         backup_file=backup_file))
                 except (RestoreError, CalledProcessError) as e:
-                    raise SectionError('! ' + e.message)
+                    raise SectionError('! {0}'.format(e))
