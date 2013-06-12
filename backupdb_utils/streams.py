@@ -23,6 +23,19 @@ class StandardStreams(object):
         self._verbosity = 0
 
     @check_verbosity
+    def out(self, msg, newline=True):
+        """
+        Prints the given message to stdout, including a newline by default.
+
+        Examples:
+        >>> out('Test')
+        Test
+        >>> out('Test', newline=False)
+        Test>>>
+        """
+        sys.stdout.write(msg + ('\n' if newline else ''))
+
+    @check_verbosity
     def err(self, msg, newline=True):
         """
         Prints the given message to stderr, including a newline by default.
@@ -96,6 +109,7 @@ class StandardStreams(object):
 
 standard_streams = StandardStreams()
 
+out = standard_streams.out
 err = standard_streams.err
 bar = standard_streams.bar
 set_verbosity = standard_streams.set_verbosity

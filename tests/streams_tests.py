@@ -1,7 +1,8 @@
 from mock import patch, call
+import sys
 import unittest
 
-from backupdb_utils.streams import err, bar, set_verbosity, SectionError, section
+from backupdb_utils.streams import out, err, bar, set_verbosity, SectionError, section
 
 
 class PatchStandardStreamsTestCase(unittest.TestCase):
@@ -33,13 +34,37 @@ class ErrTestCase(PatchStandardStreamsTestCase):
         )
 
 
+class OutTestCase(PatchStandardStreamsTestCase):
+    def test_calling_out_writes_to_sys_stdout(self):
+        out('Richard Dean Anderson is...', newline=False)
+        out('MacGyver')
+
+        self.assertStdOutCallsEqual(
+            call('Richard Dean Anderson is...'),
+            call('MacGyver\n'),
+        )
+
+
 class BarTestCase(PatchStandardStreamsTestCase):
     def test_calling_bar_writes_a_bar_to_the_given_stream(self):
-        bar('Long ago, in a galaxy far away...', width=70)
-        bar('test', width=10)
+        bar('Long ago, in a galaxy far away...', width=70, stream=sys.stderr)
+        bar('test', width=10, stream=sys.stderr)
 
         self.assertStdErrCallsEqual(
             call('================== Long ago, in a galaxy far away... =================\n'),
+            call('== test ==\n'),
+        )
+
+        bar('test', width=10, stream=sys.stdout)
+
+        self.assertStdOutCallsEqual(
+            call('== test ==\n'),
+        )
+
+    def test_calling_bar_writes_to_stderr_by_default(self):
+        bar('test', width=10)
+
+        self.assertStdErrCallsEqual(
             call('== test ==\n'),
         )
 
@@ -66,19 +91,12 @@ class BarTestCase(PatchStandardStreamsTestCase):
             call('\\\\================= ...MacGyver ================//\n'),
         )
 
-    def test_calling_bar_with_explicit_stream(self):
-        import sys
-        bar('test', width=10, stream=sys.stdout)
-
-        self.assertStdOutCallsEqual(
-            call('== test ==\n'),
-        )
-
 
 class SetVerbosityTestCase(PatchStandardStreamsTestCase):
     def test_messages_higher_than_current_verbosity_level_are_ignored(self):
         set_verbosity(0)
         err('Shh...', verbosity=1)
+        out('Shh...', verbosity=1)
 
         self.assertStdErrCallsEqual()
 
@@ -89,10 +107,13 @@ class SetVerbosityTestCase(PatchStandardStreamsTestCase):
         err('...be vewy vewy kwiet...', verbosity=1)
         err("...I'm hunting wabbit...", verbosity=2)
         set_verbosity(2)
-        err('FWEEZE WABBIT!', verbosity=2)
+        out('FWEEZE WABBIT!', verbosity=2)
 
         self.assertStdErrCallsEqual(
             call('...be vewy vewy kwiet...\n'),
+        )
+
+        self.assertStdOutCallsEqual(
             call('FWEEZE WABBIT!\n'),
         )
 
