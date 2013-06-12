@@ -37,7 +37,7 @@ class StandardStreams(object):
 
     @check_verbosity
     def bar(self, msg='', width=70, position=None, stream=None):
-        """
+        r"""
         Prints a bar text effect to the standard stream specified by `stream`.
 
         Examples:
@@ -46,9 +46,9 @@ class StandardStreams(object):
         >>> bar(width=10)
         ==========
         >>> bar('Richard Dean Anderson is...', position='top')
-        //========= Richard Dean Anderson is... ========\\\\
+        //========= Richard Dean Anderson is... ========\\
         >>> bar('...MacGyver', position='bottom')
-        \\\\================= ...MacGyver ================//
+        \\================= ...MacGyver ================//
         """
         width = max(width, len(msg) + 4)
         # Must set this here as opposed to in the argument list so mock tests
@@ -84,9 +84,9 @@ class StandardStreams(object):
 
         Examples:
         >>> set_verbosity(0)
-        >>> err('Good morning', verbosity=0)
-        Hello
-        >>> err('Dave', verbosity=1)
+        >>> err('Good Morning', verbosity=0)
+        Good Morning
+        >>> err('Dave...', verbosity=1)
         >>> set_verbosity(1)
         >>> err('Vietnam!!', verbosity=1)
         Vietnam!!
