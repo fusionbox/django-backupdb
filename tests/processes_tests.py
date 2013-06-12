@@ -1,3 +1,4 @@
+from subprocess import CalledProcessError
 import os
 import unittest
 
@@ -5,6 +6,7 @@ from backupdb_utils.processes import (
     extend_env,
     get_env_str,
     pipe_commands,
+    pipe_commands_to_file,
 )
 
 from .ordereddict import OrderedDict
@@ -101,7 +103,11 @@ class GetEnvStrTestCase(unittest.TestCase):
 class PipeCommandsTestCase(FileSystemScratchTestCase):
     def test_it_pipes_a_list_of_commands_into_each_other(self):
         pipe_commands([
-            ['echo', 'for i in range(4):\n    print "spam"'],
+            ['echo', r"""
+import sys
+for i in range(4):
+    sys.stdout.write('spam\n')
+"""],
             ['python'],
             ['tee', self.get_path('pipe_commands.out')],
         ])
@@ -114,7 +120,11 @@ class PipeCommandsTestCase(FileSystemScratchTestCase):
 
     def test_it_works_when_large_amounts_of_data_are_being_piped(self):
         pipe_commands([
-            ['echo', 'import sys\nfor i in range(400000):\n    sys.stdout.write("spam\\n")'],
+            ['echo', r"""
+import sys
+for i in range(400000):
+    sys.stdout.write('spam\n')
+"""],
             ['python'],
             ['tee', self.get_path('pipe_commands.out')],
         ])
@@ -122,3 +132,71 @@ class PipeCommandsTestCase(FileSystemScratchTestCase):
         self.assertFileExists('pipe_commands.out')
         self.assertFileHasLength('pipe_commands.out', 2000000)
         self.assertInFile('pipe_commands.out', 'spam\nspam\nspam\n')
+
+    def test_it_allows_you_to_specify_extra_environment_variables(self):
+        pipe_commands([
+            ['echo', """
+import os
+import sys
+sys.stdout.write(os.environ['TEST_VAR'])
+"""],
+            ['python'],
+            ['tee', self.get_path('pipe_commands.out')],
+        ], extra_env={'TEST_VAR': 'spam'})
+
+        self.assertFileExists('pipe_commands.out')
+        self.assertFileHasContent('pipe_commands.out', 'spam')
+
+    def test_it_correctly_raises_a_called_process_error_when_necessary(self):
+        self.assertRaises(CalledProcessError, pipe_commands, [['false'], ['true']])
+
+
+class PipeCommandsToFileTestCase(FileSystemScratchTestCase):
+    def test_it_pipes_a_list_of_commands_into_each_other_and_then_into_a_file(self):
+        pipe_commands_to_file([
+            ['echo', r"""
+import sys
+for i in range(4):
+    sys.stdout.write('spam\n')
+"""],
+            ['python'],
+        ], self.get_path('pipe_commands.out'))
+
+        self.assertFileExists('pipe_commands.out')
+        self.assertFileHasContent(
+            'pipe_commands.out',
+            'spam\nspam\nspam\nspam\n',
+        )
+
+    def test_it_works_when_large_amounts_of_data_are_being_piped(self):
+        pipe_commands_to_file([
+            ['echo', r"""
+import sys
+for i in range(400000):
+    sys.stdout.write('spam\n')
+"""],
+            ['python'],
+        ], self.get_path('pipe_commands.out'))
+
+        self.assertFileExists('pipe_commands.out')
+        self.assertFileHasLength('pipe_commands.out', 2000000)
+        self.assertInFile('pipe_commands.out', 'spam\nspam\nspam\n')
+
+    def test_it_allows_you_to_specify_extra_environment_variables(self):
+        pipe_commands_to_file([
+            ['echo', """
+import os
+import sys
+sys.stdout.write(os.environ['TEST_VAR'])
+"""],
+            ['python'],
+        ], self.get_path('pipe_commands.out'), extra_env={'TEST_VAR': 'spam'})
+
+        self.assertFileExists('pipe_commands.out')
+        self.assertFileHasContent('pipe_commands.out', 'spam')
+
+    def test_it_correctly_raises_a_called_process_error_when_necessary(self):
+        self.assertRaises(
+            CalledProcessError,
+            pipe_commands_to_file, [['false'], ['true']], 'pipe_commands.out',
+        )
