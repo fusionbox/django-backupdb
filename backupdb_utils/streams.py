@@ -68,13 +68,13 @@ class StandardStreams(object):
 
         if position == 'top':
             start_bar = '//' + start_bar[2:]
-            end_bar = end_bar[:-2] + '\\\\'
+            end_bar = end_bar[:-2] + r'\\'
         elif position == 'bottom':
-            start_bar = '\\\\' + start_bar[2:]
+            start_bar = r'\\' + start_bar[2:]
             end_bar = end_bar[:-2] + '//'
 
         if msg:
-            msg = ' {0} '.format(msg)
+            msg = ' ' + msg + ' '
 
         stream.write(start_bar + msg + end_bar + '\n')
 
