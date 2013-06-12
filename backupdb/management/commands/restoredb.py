@@ -85,7 +85,7 @@ class Command(BaseCommand):
                     try:
                         backup_file = get_latest_timestamped_file(backup_extension)
                     except RestoreError as e:
-                        raise SectionError('! ' + e.message)
+                        raise SectionError('! {0}'.format(e))
 
                 # Find restore command and get kwargs
                 restore_func = backup_config['restore_func']
