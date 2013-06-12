@@ -1,15 +1,124 @@
 import os
 import unittest
 
-from backupdb_utils.processes import extend_env
+from backupdb_utils.processes import (
+    extend_env,
+    get_env_str,
+    pipe_commands,
+)
+
+from .ordereddict import OrderedDict
+
+
+class FileSystemScratchTestCase(unittest.TestCase):
+    SCRATCH_DIR = 'tests_scratch'
+
+    @classmethod
+    def get_path(cls, file):
+        return os.path.join(cls.SCRATCH_DIR, file)
+
+    @classmethod
+    def clear_scratch_dir(cls):
+        """
+        Deletes all scratch files in the tests scratch directory.
+        """
+        for file in os.listdir(cls.SCRATCH_DIR):
+            if file != '.gitkeep':
+                os.remove(cls.get_path(file))
+
+    def setUp(self):
+        self.clear_scratch_dir()
+
+    def tearDown(self):
+        self.clear_scratch_dir()
+
+    def assertFileExists(self, file):
+        self.assertTrue(os.path.exists(self.get_path(file)))
+
+    def assertFileHasLength(self, file, length):
+        with open(self.get_path(file)) as f:
+            content = f.read()
+            self.assertEqual(len(content), length)
+
+    def assertFileHasContent(self, file, expected_content):
+        with open(self.get_path(file)) as f:
+            actual_content = f.read()
+            self.assertEqual(actual_content, expected_content)
+
+    def assertInFile(self, file, expected_content):
+        with open(self.get_path(file)) as f:
+            actual_content = f.read()
+            self.assertTrue(expected_content in actual_content)
 
 
 class ExtendEnvTestCase(unittest.TestCase):
     def test_extend_env_creates_a_copy_of_the_current_env(self):
-        env = extend_env({'arst': 1234})
+        env = extend_env({'BACKUPDB_TEST_ENV_SETTING': 1234})
         self.assertFalse(env is os.environ)
 
-    #def test_extend_env_adds_keys_to_a_copy_of_the_current_env(self):
-        #self.assertNotEqual(
-        #env = extend_env({'arst': 1234})
-        #self.assertFalse(env is os.environ)
+    def test_extend_env_adds_keys_to_a_copy_of_the_current_env(self):
+        env = extend_env({
+            'BACKUPDB_TEST_ENV_SETTING_1': 1234,
+            'BACKUPDB_TEST_ENV_SETTING_2': 1234,
+        })
+
+        orig_keys = set(os.environ.keys())
+        curr_keys = set(env.keys())
+        diff_keys = curr_keys - orig_keys
+
+        self.assertEqual(diff_keys, set([
+            'BACKUPDB_TEST_ENV_SETTING_1',
+            'BACKUPDB_TEST_ENV_SETTING_2',
+        ]))
+
+
+class GetEnvStrTestCase(unittest.TestCase):
+    def test_get_env_str_works_for_empty_dicts(self):
+        self.assertEqual(get_env_str({}), '')
+
+    def test_get_env_str_works_for_non_empty_dicts(self):
+        self.assertEqual(
+            get_env_str({'VAR_1': 1234}),
+            "VAR_1='1234'",
+        )
+        self.assertEqual(
+            get_env_str(OrderedDict([
+                ('VAR_1', 1234),
+                ('VAR_2', 'arst'),
+            ])),
+            "VAR_1='1234' VAR_2='arst'",
+        )
+        self.assertEqual(
+            get_env_str(OrderedDict([
+                ('VAR_1', 1234),
+                ('VAR_2', 'arst'),
+                ('VAR_3', 'zxcv'),
+            ])),
+            "VAR_1='1234' VAR_2='arst' VAR_3='zxcv'",
+        )
+
+
+class PipeCommandsTestCase(FileSystemScratchTestCase):
+    def test_it_pipes_a_list_of_commands_into_each_other(self):
+        pipe_commands([
+            ['echo', 'for i in range(4):\n    print "spam"'],
+            ['python'],
+            ['tee', self.get_path('pipe_commands.out')],
+        ])
+
+        self.assertFileExists('pipe_commands.out')
+        self.assertFileHasContent(
+            'pipe_commands.out',
+            'spam\nspam\nspam\nspam\n',
+        )
+
+    def test_it_works_when_large_amounts_of_data_are_being_piped(self):
+        pipe_commands([
+            ['echo', 'import sys\nfor i in range(400000):\n    sys.stdout.write("spam\\n")'],
+            ['python'],
+            ['tee', self.get_path('pipe_commands.out')],
+        ])
+
+        self.assertFileExists('pipe_commands.out')
+        self.assertFileHasLength('pipe_commands.out', 2000000)
+        self.assertInFile('pipe_commands.out', 'spam\nspam\nspam\n')
