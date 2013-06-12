@@ -45,9 +45,9 @@ class StandardStreams(object):
         == test ==
         >>> bar(width=10)
         ==========
-        >>> bar('Richard Dean Anderson is...', position='top')
+        >>> bar('Richard Dean Anderson is...', position='top', width=50)
         //========= Richard Dean Anderson is... ========\\
-        >>> bar('...MacGyver', position='bottom')
+        >>> bar('...MacGyver', position='bottom', width=50)
         \\================= ...MacGyver ================//
         """
         width = max(width, len(msg) + 4)
