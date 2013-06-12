@@ -198,5 +198,7 @@ sys.stdout.write(os.environ['TEST_VAR'])
     def test_it_correctly_raises_a_called_process_error_when_necessary(self):
         self.assertRaises(
             CalledProcessError,
-            pipe_commands_to_file, [['false'], ['true']], 'pipe_commands.out',
+            pipe_commands_to_file,
+            [['false'], ['true']],
+            self.get_path('pipe_commands.out'),
         )
