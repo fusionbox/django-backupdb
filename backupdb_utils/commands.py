@@ -101,7 +101,7 @@ def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_output
     psql_cmd = ['psql'] + args
 
     if drop_tables:
-        drop_sql = "SELECT 'DROP TABLE IF EXISTS \"' || tablename || '\" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"
+        drop_sql = """SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"""
         gen_drop_sql_cmd = psql_cmd + ['-t', '-c', drop_sql]
         pipe_commands([gen_drop_sql_cmd, psql_cmd], **kwargs)
 
