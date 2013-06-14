@@ -19,6 +19,11 @@ def require_backup_exists(func):
 
 
 def get_mysql_args(db_config):
+    """
+    Returns an array of argument values that will be passed to a `mysql` or
+    `mysqldump` process when it is started based on the given database
+    configuration.
+    """
     user = db_config['USER']
     password = db_config.get('PASSWORD')
     host = db_config.get('HOST')
@@ -38,6 +43,11 @@ def get_mysql_args(db_config):
 
 
 def get_postgresql_args(db_config, extra_args=None):
+    """
+    Returns an array of argument values that will be passed to a `psql` or
+    `pg_dump` process when it is started based on the given database
+    configuration.
+    """
     user = db_config['USER']
     host = db_config.get('HOST')
     port = db_config.get('PORT')
