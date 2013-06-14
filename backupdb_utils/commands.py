@@ -55,17 +55,27 @@ def get_postgresql_args(db_config, extra_args=None):
     return args
 
 
+def get_postgresql_env(db_config):
+    """
+    Returns a dict containing extra environment variable values that will be
+    added to the environment of the `psql` or `pg_dump` process when it is
+    started based on the given database configuration.
+    """
+    password = db_config.get('PASSWORD')
+    return {'PGPASSWORD': password} if password else None
+
+
 def do_mysql_backup(backup_file, db_config, show_output=False):
     args = get_mysql_args(db_config)
+
     cmd = ['mysqldump'] + args
     pipe_commands_to_file([cmd, ['gzip']], path=backup_file, show_stderr=show_output)
 
 
 def do_postgresql_backup(backup_file, db_config, pg_dump_options=None, show_output=False):
-    password = db_config.get('PASSWORD')
-    env = {'PGPASSWORD': password} if password else None
-
+    env = get_postgresql_env(db_config)
     args = get_postgresql_args(db_config, pg_dump_options)
+
     cmd = ['pg_dump', '--clean'] + args
     pipe_commands_to_file([cmd, ['gzip']], path=backup_file, extra_env=env, show_stderr=show_output)
 
@@ -79,10 +89,10 @@ def do_sqlite_backup(backup_file, db_config, show_output=False):
 
 @require_backup_exists
 def do_mysql_restore(backup_file, db_config, drop_tables=False, show_output=False):
-    kwargs = {'show_stderr': show_output, 'show_last_stdout': show_output}
-
     args = get_mysql_args(db_config)
     mysql_cmd = ['mysql'] + args
+
+    kwargs = {'show_stderr': show_output, 'show_last_stdout': show_output}
 
     if drop_tables:
         dump_cmd = ['mysqldump'] + args + ['--no-data']
@@ -93,12 +103,11 @@ def do_mysql_restore(backup_file, db_config, drop_tables=False, show_output=Fals
 
 @require_backup_exists
 def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_output=False):
-    password = db_config.get('PASSWORD')
-    env = {'PGPASSWORD': password} if password else None
-    kwargs = {'extra_env': env, 'show_stderr': show_output, 'show_last_stdout': show_output}
-
+    env = get_postgresql_env(db_config)
     args = get_postgresql_args(db_config)
     psql_cmd = ['psql'] + args
+
+    kwargs = {'extra_env': env, 'show_stderr': show_output, 'show_last_stdout': show_output}
 
     if drop_tables:
         drop_sql = """SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"""
