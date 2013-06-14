@@ -4,14 +4,14 @@ from .exceptions import RestoreError
 from .settings import BACKUP_DIR, BACKUP_TIMESTAMP_PATTERN
 
 
-def get_latest_timestamped_file(ext):
+def get_latest_timestamped_file(ext, dir=BACKUP_DIR, pattern=BACKUP_TIMESTAMP_PATTERN):
     """
     Gets the latest timestamped backup file name with the given database type
     extension.
     """
     pattern = '{dir}/{pattern}.{ext}.gz'.format(
-        dir=BACKUP_DIR,
-        pattern=BACKUP_TIMESTAMP_PATTERN,
+        dir=dir,
+        pattern=pattern,
         ext=ext,
     )
 
