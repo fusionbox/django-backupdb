@@ -3,6 +3,7 @@ import unittest
 from backupdb_utils.commands import (
     get_mysql_args,
     get_postgresql_args,
+    get_postgresql_env,
     #do_mysql_backup,
     #do_postgres_backup,
     #do_sqlite_backup,
@@ -146,4 +147,15 @@ class GetPostgresqlArgsTestCase(unittest.TestCase):
                 '--no-privileges',
                 'test_db',
             ],
+        )
+
+
+class GetPostgresqlEnvTestCase(unittest.TestCase):
+    def test_it_builds_the_correct_env_dict(self):
+        self.assertTrue(
+            get_postgresql_env(make_db_config('USER', 'NAME')) is None,
+        )
+        self.assertEqual(
+            get_postgresql_env(make_db_config('USER', 'NAME', 'PASSWORD')),
+            {'PGPASSWORD': 'test_password'},
         )
