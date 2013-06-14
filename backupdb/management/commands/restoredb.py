@@ -55,7 +55,7 @@ class Command(BaseCommand):
 
         # Ensure backup dir present
         if not os.path.exists(BACKUP_DIR):
-            raise CommandError('Backup dir \'{0}\' does not exist!'.format(BACKUP_DIR))
+            raise CommandError("Backup dir '{0}' does not exist!".format(BACKUP_DIR))
 
         backup_name = options['backup_name']
         drop_tables = options['drop_tables']
@@ -99,8 +99,8 @@ class Command(BaseCommand):
                 # Run restore command
                 try:
                     restore_func(**restore_kwargs)
-                    err("* Restored '{db}' from '{backup_file}'".format(
-                        db=db_name,
+                    err("* Restored '{db_name}' from '{backup_file}'".format(
+                        db_name=db_name,
                         backup_file=backup_file))
                 except (RestoreError, CalledProcessError) as e:
                     raise SectionError('! {0}'.format(e))

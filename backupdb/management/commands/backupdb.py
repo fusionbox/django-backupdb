@@ -90,8 +90,8 @@ class Command(BaseCommand):
                 # Run backup command
                 try:
                     backup_func(**backup_kwargs)
-                    err("* Backup of '{db}' saved in '{backup_file}'".format(
-                        db=db_name,
+                    err("* Backup of '{db_name}' saved in '{backup_file}'".format(
+                        db_name=db_name,
                         backup_file=backup_file))
                 except (BackupError, CalledProcessError) as e:
                     raise SectionError('! {0}'.format(e))
