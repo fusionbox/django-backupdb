@@ -37,7 +37,7 @@ def get_mysql_args(db_config):
     return args
 
 
-def get_postgres_args(db_config, extra_args=None):
+def get_postgresql_args(db_config, extra_args=None):
     user = db_config['USER']
     host = db_config.get('HOST')
     port = db_config.get('PORT')
@@ -65,7 +65,7 @@ def do_postgresql_backup(backup_file, db_config, pg_dump_options=None, show_outp
     password = db_config.get('PASSWORD')
     env = {'PGPASSWORD': password} if password else None
 
-    args = get_postgres_args(db_config, pg_dump_options)
+    args = get_postgresql_args(db_config, pg_dump_options)
     cmd = ['pg_dump', '--clean'] + args
     pipe_commands_to_file([cmd, ['gzip']], path=backup_file, extra_env=env, show_stderr=show_output)
 
@@ -97,7 +97,7 @@ def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_output
     env = {'PGPASSWORD': password} if password else None
     kwargs = {'extra_env': env, 'show_stderr': show_output, 'show_last_stdout': show_output}
 
-    args = get_postgres_args(db_config)
+    args = get_postgresql_args(db_config)
     psql_cmd = ['psql'] + args
 
     if drop_tables:
