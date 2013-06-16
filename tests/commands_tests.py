@@ -1,9 +1,13 @@
+from mock import call, patch
 import unittest
 
 from backupdb_utils.commands import (
     get_mysql_args,
     get_postgresql_args,
     get_postgresql_env,
+    do_mysql_backup,
+    do_postgresql_backup,
+    do_sqlite_backup,
     do_mysql_restore,
     do_postgresql_restore,
     do_sqlite_restore,
@@ -25,6 +29,24 @@ def make_db_config(*keys):
     for k in keys:
         new_dict[k] = DB_CONFIG[k]
     return new_dict
+
+
+class PatchPipeCommandsTestCase(unittest.TestCase):
+    def setUp(self):
+        self.pipe_commands_patcher = patch('backupdb_utils.commands.pipe_commands')
+        self.pipe_commands_to_file_patcher = patch('backupdb_utils.commands.pipe_commands_to_file')
+        self.mock_pipe_commands = self.pipe_commands_patcher.start()
+        self.mock_pipe_commands_to_file = self.pipe_commands_to_file_patcher.start()
+
+    def tearDown(self):
+        self.pipe_commands_patcher.stop()
+        self.pipe_commands_to_file_patcher.stop()
+
+    def assertPipeCommandsCallsEqual(self, *args):
+        self.assertEqual(self.mock_pipe_commands.call_args_list, list(args))
+
+    def assertPipeCommandsToFileCallsEqual(self, *args):
+        self.assertEqual(self.mock_pipe_commands_to_file.call_args_list, list(args))
 
 
 class RequireBackupExistsTestCase(unittest.TestCase):
@@ -156,3 +178,57 @@ class GetPostgresqlEnvTestCase(unittest.TestCase):
             get_postgresql_env(make_db_config('USER', 'NAME', 'PASSWORD')),
             {'PGPASSWORD': 'test_password'},
         )
+
+
+class DoMysqlBackupTestCase(PatchPipeCommandsTestCase):
+    def test_it_makes_correct_calls_to_processes_api(self):
+        do_mysql_backup('test.mysql.gz', DB_CONFIG)
+
+        self.assertPipeCommandsToFileCallsEqual(call(
+            [
+                [
+                    'mysqldump',
+                    '--user=test_user',
+                    '--password=test_password',
+                    '--host=test_host',
+                    '--port=12345',
+                    'test_db',
+                ],
+                ['gzip'],
+            ],
+            path='test.mysql.gz',
+            show_stderr=False,
+        ))
+
+
+class DoPostgresqlBackupTestCase(PatchPipeCommandsTestCase):
+    def test_it_makes_correct_calls_to_processes_api(self):
+        do_postgresql_backup('test.pgsql.gz', DB_CONFIG)
+
+        self.assertPipeCommandsToFileCallsEqual(call(
+            [
+                [
+                    'pg_dump',
+                    '--clean',
+                    '--username=test_user',
+                    '--host=test_host',
+                    '--port=12345',
+                    'test_db',
+                ],
+                ['gzip'],
+            ],
+            path='test.pgsql.gz',
+            extra_env={'PGPASSWORD': 'test_password'},
+            show_stderr=False,
+        ))
+
+
+class DoSqliteBackupTestCase(PatchPipeCommandsTestCase):
+    def test_it_makes_correct_calls_to_processes_api(self):
+        do_sqlite_backup('test.sqlite.gz', DB_CONFIG)
+
+        self.assertPipeCommandsToFileCallsEqual(call(
+            [['cat', 'test_db'], ['gzip']],
+            path='test.sqlite.gz',
+            show_stderr=False,
+        ))
