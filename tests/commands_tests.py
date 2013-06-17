@@ -32,6 +32,9 @@ def make_db_config(*keys):
 
 
 class MockOsPathExists(object):
+    """
+    Used as a mock object for os.path.exists.
+    """
     def __init__(self, *args, **kwargs):
         pass
 
@@ -40,6 +43,9 @@ class MockOsPathExists(object):
 
 
 class PatchPipeCommandsTestCase(unittest.TestCase):
+    """
+    Used for testing of pipe_commands and pipe_commands_to_file.
+    """
     def setUp(self):
         self.pipe_commands_patcher = patch('backupdb_utils.commands.pipe_commands')
         self.pipe_commands_to_file_patcher = patch('backupdb_utils.commands.pipe_commands_to_file')
