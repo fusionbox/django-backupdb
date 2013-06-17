@@ -5,6 +5,9 @@ from .exceptions import RestoreError
 from .processes import pipe_commands, pipe_commands_to_file
 
 
+PG_DROP_SQL = """SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"""
+
+
 def require_backup_exists(func):
     """
     Requires that the file referred to by `backup_file` exists in the file
@@ -120,8 +123,7 @@ def do_postgresql_restore(backup_file, db_config, drop_tables=False, show_output
     kwargs = {'extra_env': env, 'show_stderr': show_output, 'show_last_stdout': show_output}
 
     if drop_tables:
-        drop_sql = """SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"""
-        gen_drop_sql_cmd = psql_cmd + ['-t', '-c', drop_sql]
+        gen_drop_sql_cmd = psql_cmd + ['-t', '-c', PG_DROP_SQL]
         pipe_commands([gen_drop_sql_cmd, psql_cmd], **kwargs)
 
     pipe_commands([['cat', backup_file], ['gunzip'], psql_cmd], **kwargs)
