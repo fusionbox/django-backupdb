@@ -77,21 +77,14 @@ class RequireBackupExistsTestCase(unittest.TestCase):
 class GetMysqlArgsTestCase(unittest.TestCase):
     def test_it_builds_the_correct_args(self):
         self.assertEqual(
-            get_mysql_args(make_db_config(
-                'NAME',
-                'USER',
-            )),
+            get_mysql_args(make_db_config('NAME', 'USER')),
             [
                 '--user=test_user',
                 'test_db',
             ],
         )
         self.assertEqual(
-            get_mysql_args(make_db_config(
-                'NAME',
-                'USER',
-                'PASSWORD',
-            )),
+            get_mysql_args(make_db_config('NAME', 'USER', 'PASSWORD')),
             [
                 '--user=test_user',
                 '--password=test_password',
@@ -99,12 +92,7 @@ class GetMysqlArgsTestCase(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            get_mysql_args(make_db_config(
-                'NAME',
-                'USER',
-                'PASSWORD',
-                'HOST',
-            )),
+            get_mysql_args(make_db_config('NAME', 'USER', 'PASSWORD', 'HOST')),
             [
                 '--user=test_user',
                 '--password=test_password',
@@ -113,13 +101,7 @@ class GetMysqlArgsTestCase(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            get_mysql_args(make_db_config(
-                'NAME',
-                'USER',
-                'PASSWORD',
-                'HOST',
-                'PORT',
-            )),
+            get_mysql_args(make_db_config('NAME', 'USER', 'PASSWORD', 'HOST', 'PORT')),
             [
                 '--user=test_user',
                 '--password=test_password',
@@ -133,21 +115,14 @@ class GetMysqlArgsTestCase(unittest.TestCase):
 class GetPostgresqlArgsTestCase(unittest.TestCase):
     def test_it_builds_the_correct_args(self):
         self.assertEqual(
-            get_postgresql_args(make_db_config(
-                'NAME',
-                'USER',
-            )),
+            get_postgresql_args(make_db_config('NAME', 'USER')),
             [
                 '--username=test_user',
                 'test_db',
             ],
         )
         self.assertEqual(
-            get_postgresql_args(make_db_config(
-                'NAME',
-                'USER',
-                'HOST',
-            )),
+            get_postgresql_args(make_db_config('NAME', 'USER', 'HOST')),
             [
                 '--username=test_user',
                 '--host=test_host',
@@ -155,12 +130,7 @@ class GetPostgresqlArgsTestCase(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            get_postgresql_args(make_db_config(
-                'NAME',
-                'USER',
-                'HOST',
-                'PORT',
-            )),
+            get_postgresql_args(make_db_config('NAME', 'USER', 'HOST', 'PORT')),
             [
                 '--username=test_user',
                 '--host=test_host',
@@ -172,10 +142,7 @@ class GetPostgresqlArgsTestCase(unittest.TestCase):
     def test_it_correctly_includes_extra_args(self):
         self.assertEqual(
             get_postgresql_args(
-                make_db_config(
-                    'NAME',
-                    'USER',
-                ),
+                make_db_config('NAME', 'USER'),
                 extra_args='--no-owner --no-privileges',
             ),
             [
@@ -258,10 +225,7 @@ class DoMysqlRestoreTestCase(PatchPipeCommandsTestCase):
 
         self.assertPipeCommandsCallsEqual(call(
             [
-                [
-                    'cat',
-                    'test.mysql.gz',
-                ],
+                ['cat', 'test.mysql.gz'],
                 ['gunzip'],
                 [
                     'mysql',
@@ -283,10 +247,7 @@ class DoPostgresqlRestoreTestCase(PatchPipeCommandsTestCase):
 
         self.assertPipeCommandsCallsEqual(call(
             [
-                [
-                    'cat',
-                    'test.pgsql.gz',
-                ],
+                ['cat', 'test.pgsql.gz'],
                 ['gunzip'],
                 [
                     'psql',
