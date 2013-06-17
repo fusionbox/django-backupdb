@@ -2,6 +2,7 @@ from mock import call, patch
 import unittest
 
 from backupdb_utils.commands import (
+    PG_DROP_SQL,
     get_mysql_args,
     get_postgresql_args,
     get_postgresql_env,
@@ -240,6 +241,52 @@ class DoMysqlRestoreTestCase(PatchPipeCommandsTestCase):
             show_last_stdout=False,
         ))
 
+    def test_it_drops_tables_before_restoring_if_specified(self):
+        do_mysql_restore(backup_file='test.mysql.gz', db_config=DB_CONFIG, drop_tables=True)
+
+        self.assertPipeCommandsCallsEqual(
+            call(
+                [
+                    [
+                        'mysqldump',
+                        '--user=test_user',
+                        '--password=test_password',
+                        '--host=test_host',
+                        '--port=12345',
+                        'test_db',
+                        '--no-data',
+                    ],
+                    ['grep', '^DROP'],
+                    [
+                        'mysql',
+                        '--user=test_user',
+                        '--password=test_password',
+                        '--host=test_host',
+                        '--port=12345',
+                        'test_db',
+                    ],
+                ],
+                show_stderr=False,
+                show_last_stdout=False,
+            ),
+            call(
+                [
+                    ['cat', 'test.mysql.gz'],
+                    ['gunzip'],
+                    [
+                        'mysql',
+                        '--user=test_user',
+                        '--password=test_password',
+                        '--host=test_host',
+                        '--port=12345',
+                        'test_db',
+                    ],
+                ],
+                show_stderr=False,
+                show_last_stdout=False,
+            ),
+        )
+
 
 class DoPostgresqlRestoreTestCase(PatchPipeCommandsTestCase):
     def test_it_makes_correct_calls_to_processes_api(self):
@@ -261,6 +308,52 @@ class DoPostgresqlRestoreTestCase(PatchPipeCommandsTestCase):
             show_stderr=False,
             show_last_stdout=False,
         ))
+
+    def test_it_drops_tables_before_restoring_if_specified(self):
+        do_postgresql_restore(backup_file='test.pgsql.gz', db_config=DB_CONFIG, drop_tables=True)
+
+        self.assertPipeCommandsCallsEqual(
+            call(
+                [
+                    [
+                        'psql',
+                        '--username=test_user',
+                        '--host=test_host',
+                        '--port=12345',
+                        'test_db',
+                        '-t',
+                        '-c',
+                        PG_DROP_SQL,
+                    ],
+                    [
+                        'psql',
+                        '--username=test_user',
+                        '--host=test_host',
+                        '--port=12345',
+                        'test_db',
+                    ],
+                ],
+                extra_env={'PGPASSWORD': 'test_password'},
+                show_stderr=False,
+                show_last_stdout=False,
+            ),
+            call(
+                [
+                    ['cat', 'test.pgsql.gz'],
+                    ['gunzip'],
+                    [
+                        'psql',
+                        '--username=test_user',
+                        '--host=test_host',
+                        '--port=12345',
+                        'test_db',
+                    ],
+                ],
+                extra_env={'PGPASSWORD': 'test_password'},
+                show_stderr=False,
+                show_last_stdout=False,
+            ),
+        )
 
 
 class DoSqliteRestoreTestCase(PatchPipeCommandsTestCase):
