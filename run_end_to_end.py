@@ -6,7 +6,6 @@
 import os
 import sys
 
-# fix sys path so we don't need to setup PYTHONPATH
 sys.path.append(os.path.join(os.path.dirname(__file__)))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'backupdb.tests.settings'
 
@@ -17,7 +16,7 @@ from django.test.utils import get_runner
 
 def usage():
     return """
-Usage: python runend2end.py [UnitTestCase].[method]
+Usage: python run_end_to_end.py [UnitTestCase].[method]
 
 You can pass the class name of a specific test case you want to run.  You may
 also run a particular test in a test case by specifying its method name.
