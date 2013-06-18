@@ -36,7 +36,7 @@ def main():
         print(usage())
         sys.exit(1)
 
-    test_module_name = 'rest_framework.tests'
+    test_module_name = 'backupdb.tests'
     if django.VERSION[0] == 1 and django.VERSION[1] < 6:
         test_module_name = 'tests'
 
