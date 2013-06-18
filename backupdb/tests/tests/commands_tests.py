@@ -1,7 +1,7 @@
 from django.core.management import call_command
 from django.utils import unittest
 
-from .models import TestModel
+from backupdb.tests.models import TestModel
 
 
 class BackupDBCommandTestCase(unittest.TestCase):
