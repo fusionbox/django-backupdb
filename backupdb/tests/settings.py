@@ -12,6 +12,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'backupdb_database',
+        'TEST_NAME': 'test_backupdb_database',
     },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
