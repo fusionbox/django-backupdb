@@ -1,2 +1,3 @@
 #!/bin/sh
-python setup.py nosetests $@
+
+python setup.py nosetests --exclude="^backupdb" $@
