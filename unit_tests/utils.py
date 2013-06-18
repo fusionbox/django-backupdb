@@ -3,7 +3,7 @@ import unittest
 
 
 class FileSystemScratchTestCase(unittest.TestCase):
-    SCRATCH_DIR = 'tests_scratch'
+    SCRATCH_DIR = 'unit_tests_scratch'
 
     @classmethod
     def get_path(cls, file):
