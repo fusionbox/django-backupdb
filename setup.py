@@ -20,7 +20,7 @@ setup(
     author_email='programmers@fusionbox.com',
     keywords='django database backup',
     url='https://github.com/fusionbox/django-backupdb',
-    packages=find_packages(exclude=('tests', 'tests_scratch')),
+    packages=find_packages(exclude=('unit_tests', 'unit_tests_scratch')),
     platforms='any',
     license='BSD',
     test_suite='nose.collector',
