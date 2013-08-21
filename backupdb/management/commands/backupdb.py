@@ -1,20 +1,14 @@
-"""
-Adapted from http://djangosnippets.org/snippets/823/
-"""
-
 from optparse import make_option
-from subprocess import Popen, PIPE
+from subprocess import CalledProcessError
 import os
-import pipes
 import time
 
 from django.core.management.base import BaseCommand
 
-BACKUP_DIR = 'backups'
-
-
-class BackupError(Exception):
-    pass
+from backupdb_utils.commands import do_postgresql_backup
+from backupdb_utils.exceptions import BackupError
+from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
+from backupdb_utils.streams import err, section, SectionError, set_verbosity
 
 
 class Command(BaseCommand):
@@ -24,11 +18,32 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option(
             '--backup-name',
-            help='Specify a name for the backup.  Defaults to the current timestamp.  Example: `--backup-name=test` will create backup files that look like "default-test.pgsql.gz".',
+            help=(
+                'Specify a name for the backup.  Defaults to the current '
+                'timestamp.  Example: `--backup-name=test` will create backup '
+                'files that look like "default-test.pgsql.gz".'
+            ),
         ),
         make_option(
             '--pg-dump-options',
-            help='For postgres backups, a list of additional options that will be passed through to the pg_dump utility.  Example: `--pg-dump-options="--inserts --no-owner"`',
+            help=(
+                'For postgres backups, a list of additional options that will '
+                'be passed through to the pg_dump utility.  Example: '
+                '`--pg-dump-options="--inserts --no-owner"`'
+            ),
+        ),
+        make_option(
+            '--show-output',
+            action='store_true',
+            default=False,
+            help=(
+                'Display the output of stderr and stdout (apart from data which '
+                'is piped from one process to another) for processes that are '
+                'run while backing up databases.  These are command-line '
+                'programs such as `psql` or `mysql`.  This can be useful for '
+                'understanding how backups are failing in the case that they '
+                'are.'
+            ),
         ),
     )
 
@@ -36,179 +51,47 @@ class Command(BaseCommand):
         from django.conf import settings
 
         current_time = time.strftime('%F-%s')
+        backup_name = options['backup_name'] or current_time
+        show_output = options['show_output']
 
-        backup_name = options.get('backup_name')
-        pg_dump_options = options.get('pg_dump_options')
+        set_verbosity(int(options['verbosity']))
 
+        # Ensure backup dir present
         if not os.path.exists(BACKUP_DIR):
             os.makedirs(BACKUP_DIR)
 
-        # Loop through databases and backup
-        for database_name in settings.DATABASES:
-            config = settings.DATABASES[database_name]
+        # Loop through databases
+        for db_name, db_config in settings.DATABASES.items():
+            with section("Backing up '{0}'...".format(db_name)):
+                # Get backup config for this engine type
+                engine = db_config['ENGINE']
+                backup_config = BACKUP_CONFIG.get(engine)
+                if not backup_config:
+                    raise SectionError("! Backup for '{0}' engine not implemented".format(engine))
 
-            backup_kwargs = {
-                'db': config['NAME'],
-                'user': config['USER'],
-                'password': config.get('PASSWORD', None),
-                'host': config.get('HOST', None),
-                'port': config.get('PORT', None),
-            }
+                # Get backup file name
+                backup_base_name = '{db_name}-{backup_name}.{backup_extension}.gz'.format(
+                    db_name=db_name,
+                    backup_name=backup_name,
+                    backup_extension=backup_config['backup_extension'],
+                )
+                backup_file = os.path.join(BACKUP_DIR, backup_base_name)
 
-            # MySQL command and args
-            if config['ENGINE'] == 'django.db.backends.mysql':
-                backup_cmd = self.do_mysql_backup
-
-                if backup_name:
-                    backup_file = '{0}-{1}.mysql.gz'.format(database_name, backup_name)
-                else:
-                    backup_file = '{0}-{1}.mysql.gz'.format(database_name, current_time)
-
-                backup_kwargs['backup_file'] = os.path.join(BACKUP_DIR, backup_file)
-
-            # PostgreSQL command and args
-            elif config['ENGINE'] in ('django.db.backends.postgresql_psycopg2', 'django.contrib.gis.db.backends.postgis'):
-                backup_cmd = self.do_postgresql_backup
-
-                if backup_name:
-                    backup_file = '{0}-{1}.pgsql.gz'.format(database_name, backup_name)
-                else:
-                    backup_file = '{0}-{1}.pgsql.gz'.format(database_name, current_time)
-
-                backup_kwargs['backup_file'] = os.path.join(BACKUP_DIR, backup_file)
-                backup_kwargs['pg_dump_options'] = pg_dump_options
-
-            # SQLite command and args
-            elif config['ENGINE'] == 'django.db.backends.sqlite3':
-                backup_cmd = self.do_sqlite_backup
-
-                if backup_name:
-                    backup_file = '{0}-{1}.sqlite.gz'.format(database_name, backup_name)
-                else:
-                    backup_file = '{0}-{1}.sqlite.gz'.format(database_name, current_time)
-
+                # Find backup command and get kwargs
+                backup_func = backup_config['backup_func']
                 backup_kwargs = {
-                    'backup_file': os.path.join(BACKUP_DIR, backup_file),
-                    'db_file': config['NAME'],
+                    'backup_file': backup_file,
+                    'db_config': db_config,
+                    'show_output': show_output,
                 }
+                if backup_func is do_postgresql_backup:
+                    backup_kwargs['pg_dump_options'] = options['pg_dump_options']
 
-            # Unsupported
-            else:
-                backup_cmd = None
-
-            # Run backup command with args
-            print '========== Backing up \'{0}\'...'.format(database_name)
-
-            if backup_cmd:
+                # Run backup command
                 try:
-                    backup_cmd(**backup_kwargs)
-                    print '========== ...done!'
-                except BackupError as e:
-                    print e.message
-                    print '========== ...skipped.'
-            else:
-                print 'Backup for {0} engine not implemented.'.format(config['ENGINE'])
-                print '========== ...skipped.'
-
-            print ''
-
-    def do_mysql_backup(self, backup_file, db, user, password=None, host=None, port=None):
-        # Build args to dump command
-        dump_args = []
-        dump_args += ['--user={0}'.format(pipes.quote(user))]
-        if password:
-            dump_args += ['--password={0}'.format(pipes.quote(password))]
-        if host:
-            dump_args += ['--host={0}'.format(pipes.quote(host))]
-        if port:
-            dump_args += ['--port={0}'.format(pipes.quote(port))]
-        dump_args += [pipes.quote(db)]
-        dump_args = ' '.join(dump_args)
-
-        # Build filenames
-        backup_file = pipes.quote(backup_file)
-
-        # Build command
-        cmd = 'mysqldump {dump_args} | gzip > {backup_file}'.format(
-            dump_args=dump_args,
-            backup_file=backup_file,
-        )
-
-        # Execute
-        self.do_command(cmd, db)
-
-        print 'Backed up {db}; Load with `cat {backup_file} | gunzip | mysql {dump_args}`'.format(
-            db=db,
-            backup_file=backup_file,
-            dump_args=dump_args,
-        )
-
-    def do_postgresql_backup(self, backup_file, db, user, password=None, host=None, port=None, pg_dump_options=None):
-        # Build args to dump command
-        dump_args = ['--clean']
-        if pg_dump_options:
-            dump_args += [pg_dump_options]
-        dump_args += ['--username={0}'.format(pipes.quote(user))]
-        if host:
-            dump_args += ['--host={0}'.format(pipes.quote(host))]
-        if port:
-            dump_args += ['--port={0}'.format(pipes.quote(port))]
-        dump_args += [pipes.quote(db)]
-        dump_args = ' '.join(dump_args)
-
-        pgpassword_env = 'PGPASSWORD={0} '.format(password) if password else ''
-
-        # Build filenames
-        backup_file = pipes.quote(backup_file)
-
-        # Build command
-        cmd = '{pgpassword_env}pg_dump {dump_args} | gzip > {backup_file}'.format(
-            pgpassword_env=pgpassword_env,
-            dump_args=dump_args,
-            backup_file=backup_file,
-        )
-
-        # Execute
-        self.do_command(cmd, db)
-
-        print 'Backed up {db}; Load with `cat {backup_file} | gunzip | psql {dump_args}`'.format(
-            db=db,
-            backup_file=backup_file,
-            dump_args=dump_args,
-        )
-
-    def do_sqlite_backup(self, backup_file, db_file):
-        # Build filenames
-        db_file = pipes.quote(db_file)
-        backup_file = pipes.quote(backup_file)
-
-        # Build command
-        cmd = 'gzip < {db_file} > {backup_file}'.format(
-            db_file=db_file,
-            backup_file=backup_file,
-        )
-
-        # Execute
-        self.do_command(cmd, db_file)
-
-        print 'Backed up {db_file}; Load with `cat {backup_file} | gunzip > {db_file}`'.format(
-            db_file=db_file,
-            backup_file=backup_file,
-        )
-
-    def do_command(cls, cmd, db):
-        """
-        Executes a command and prints a status message.
-        """
-        print 'executing:'
-        print cmd
-
-        with open('/dev/null', 'w') as FNULL:
-            process = Popen(cmd, stdin=PIPE, stdout=FNULL, stderr=FNULL, shell=True)
-            process.wait()
-
-            if process.returncode != 0:
-                raise BackupError('Error code {code} while backing up database \'{db}\'!'.format(
-                    code=process.returncode,
-                    db=db,
-                ))
+                    backup_func(**backup_kwargs)
+                    err("* Backup of '{db_name}' saved in '{backup_file}'".format(
+                        db_name=db_name,
+                        backup_file=backup_file))
+                except (BackupError, CalledProcessError) as e:
+                    raise SectionError('! {0}'.format(e))

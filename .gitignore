@@ -1,8 +1,11 @@
 *.pyc
 *.swp
 doc/_build
-*.egg-info/
+*.egg
+*.egg-info
 build/
 dist/
 test_backupdb_database
 backups/
+.coverage
+.b_hook

@@ -1,10 +1,11 @@
+from django import db
 from django.core.management import call_command
 from django.utils import unittest
 
-from .models import TestModel
+from backupdb.tests.models import TestModel
 
 
-class BackupDBCommandTestCase(unittest.TestCase):
+class BackupDBRestoreDBCommandsTestCase(unittest.TestCase):
     multi_db = True
 
     def setUp(self):
@@ -47,8 +48,28 @@ class BackupDBCommandTestCase(unittest.TestCase):
         self.assertEqual(self.mysql.count(), 0)
         self.assertEqual(self.postgresql.count(), 0)
 
+        db.close_connection()
+
         call_command('restoredb')
 
-        self.assertEqual(self.sqlite.count(), 3)
-        self.assertEqual(self.mysql.count(), 2)
-        self.assertEqual(self.postgresql.count(), 1)
+        self.assertEqual(
+            list(self.sqlite.values_list('id', 'name')),
+            [
+                (1, u'TestSqlite1'),
+                (2, u'TestSqlite2'),
+                (3, u'TestSqlite3'),
+            ],
+        )
+        self.assertEqual(
+            list(self.mysql.values_list('id', 'name')),
+            [
+                (1, u'TestMysql1'),
+                (2, u'TestMysql2'),
+            ],
+        )
+        self.assertEqual(
+            list(self.postgresql.values_list('id', 'name')),
+            [
+                (1, u'TestPostgresql1'),
+            ],
+        )

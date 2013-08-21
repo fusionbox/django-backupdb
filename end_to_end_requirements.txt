@@ -1,0 +1,4 @@
+Django
+MySQL-python==1.2.4
+psycopg2==2.5
+wsgiref==0.1.2
