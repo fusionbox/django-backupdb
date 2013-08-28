@@ -22,7 +22,7 @@ setup(
     url='https://github.com/fusionbox/django-backupdb',
     packages=find_packages(exclude=('unit_tests', 'unit_tests_scratch')),
     platforms='any',
-    license='BSD',
+    license='Fusionbox',
     test_suite='nose.collector',
     setup_requires=[
         'nose==1.2.1',
