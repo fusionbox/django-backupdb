@@ -1,21 +1,33 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
+import subprocess
 
 
-VERSION = '0.5.3'
+version = (0, 5, 4, 'alpha')
 
 
-def readme():
+def get_version():
+    number = '.'.join(map(str, version[:3]))
+    stage = version[3]
+    if stage == 'final':
+        return number
+    elif stage == 'alpha':
+        process = subprocess.Popen('git rev-parse HEAD'.split(), stdout=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        return number + '-' + stdout.decode('utf-8').strip()[:8]
+
+
+def get_readme():
     with open('README.rst') as f:
         return f.read()
 
 
 setup(
     name='django-backupdb',
-    version=VERSION,
+    version=get_version(),
     description='Management commands for backing up and restoring databases in Django.',
-    long_description=readme(),
+    long_description=get_readme(),
     author='Fusionbox programmers',
     author_email='programmers@fusionbox.com',
     keywords='django database backup',
@@ -36,7 +48,7 @@ setup(
         'django>=1.3',
     ],
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
         'Framework :: Django',
     ],
