@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 import subprocess
 
 
-version = (0, 5, 4, 'alpha')
+version = (0, 5, 4, 'final')
 
 
 def get_version():
