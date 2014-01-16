@@ -1,5 +1,6 @@
 from subprocess import Popen, PIPE, CalledProcessError
 import os
+import shutil
 
 from .streams import err
 
@@ -79,12 +80,7 @@ def pipe_commands_to_file(cmds, path, extra_env=None, show_stderr=False):
         p_last = processes[-1][1]
 
         with open(path, 'w') as f:
-            # Write data to file in chunks (works for arbitrarily large files)
-            while True:
-                data = p_last.stdout.read(512 * 1024)
-                if len(data) == 0:
-                    break
-                f.write(data)
+            shutil.copyfileobj(p_last.stdout, f)
 
             # Close processes
             for cmd_str, p in processes:
