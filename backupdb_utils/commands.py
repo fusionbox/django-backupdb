@@ -7,6 +7,17 @@ from .processes import pipe_commands, pipe_commands_to_file
 
 PG_DROP_SQL = """SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"""
 
+def apply_arg_values(arg_values):
+    """
+    Apply argument to values.
+    l = [('--name={0}', 'name'),
+         ('--password={0}', 'password'),
+         ('--level={0}', ''),
+         ('--last={0}', None)]
+    assert apply_arg_values(l) == ['--name=name', '--password=password']
+    """
+    return [a.format(v) for a, v in arg_values if v]
+
 
 def require_backup_exists(func):
     """
@@ -27,20 +38,14 @@ def get_mysql_args(db_config):
     `mysqldump` process when it is started based on the given database
     configuration.
     """
-    user = db_config['USER']
-    password = db_config.get('PASSWORD')
-    host = db_config.get('HOST')
-    port = db_config.get('PORT')
     db = db_config['NAME']
 
-    args = ['--user={0}'.format(user)]
-    if password:
-        args += ['--password={0}'.format(password)]
-    if host:
-        args += ['--host={0}'.format(host)]
-    if port:
-        args += ['--port={0}'.format(port)]
-    args += [db]
+    mapping = [('--user={0}', db_config.get('USER')),
+               ('--password={0}', db_config.get('PASSWORD')),
+               ('--host={0}', db_config.get('HOST')),
+               ('--port={0}', db_config.get('PORT'))]
+    args = apply_arg_values(mapping)
+    args.append(db)
 
     return args
 
@@ -51,19 +56,16 @@ def get_postgresql_args(db_config, extra_args=None):
     `pg_dump` process when it is started based on the given database
     configuration.
     """
-    user = db_config['USER']
-    host = db_config.get('HOST')
-    port = db_config.get('PORT')
     db = db_config['NAME']
 
-    args = ['--username={0}'.format(user)]
-    if host:
-        args += ['--host={0}'.format(host)]
-    if port:
-        args += ['--port={0}'.format(port)]
-    if extra_args:
-        args += shlex.split(extra_args)
-    args += [db]
+    mapping = [('--username={0}', db_config.get('USER')),
+               ('--host={0}', db_config.get('HOST')),
+               ('--port={0}', db_config.get('PORT'))]
+    args = apply_arg_values(mapping)
+
+    if extra_args is not None:
+        args.extend(shlex.split(extra_args))
+    args.append(db)
 
     return args
 
