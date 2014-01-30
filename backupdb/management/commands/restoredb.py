@@ -3,6 +3,7 @@ from subprocess import CalledProcessError
 import os
 
 from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 
 from backupdb_utils.exceptions import RestoreError
 from backupdb_utils.files import get_latest_timestamped_file
@@ -51,7 +52,6 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        from django.conf import settings
 
         # Ensure backup dir present
         if not os.path.exists(BACKUP_DIR):
