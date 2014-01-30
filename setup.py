@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 import subprocess
 
 
-version = (0, 5, 4, 'alpha')
+version = (0, 5, 5, 'final')
 
 
 def get_version():
@@ -48,7 +48,7 @@ setup(
         'django>=1.3',
     ],
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Framework :: Django',
     ],
