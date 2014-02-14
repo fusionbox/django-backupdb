@@ -7,6 +7,7 @@ from .processes import pipe_commands, pipe_commands_to_file
 
 PG_DROP_SQL = """SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"""
 
+
 def apply_arg_values(arg_values):
     """
     Apply argument to values.
