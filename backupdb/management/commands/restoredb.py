@@ -2,21 +2,21 @@ from optparse import make_option
 from subprocess import CalledProcessError
 import os
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.conf import settings
 from django.db import close_connection
 
+from backupdb_utils.commands import BaseBackupDbCommand
 from backupdb_utils.exceptions import RestoreError
 from backupdb_utils.files import get_latest_timestamped_file
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
 from backupdb_utils.streams import err, set_verbosity, section, SectionError
 
 
-class Command(BaseCommand):
+class Command(BaseBackupDbCommand):
     help = 'Restores each database in settings.DATABASES from latest db backup.'
-    can_import_settings = True
 
-    option_list = BaseCommand.option_list + (
+    option_list = BaseBackupDbCommand.option_list + (
         make_option(
             '--backup-name',
             help=(
@@ -53,6 +53,8 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        super(Command, self).handle(*args, **options)
+
         # Django is querying django_content_types in a hanging transaction
         # Because of this psql can't drop django_content_types and just hangs
         close_connection()
