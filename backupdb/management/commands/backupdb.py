@@ -3,19 +3,16 @@ from subprocess import CalledProcessError
 import os
 import time
 
-from django.core.management.base import BaseCommand
-
-from backupdb_utils.commands import do_postgresql_backup
+from backupdb_utils.commands import BaseBackupDbCommand, do_postgresql_backup
 from backupdb_utils.exceptions import BackupError
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
 from backupdb_utils.streams import err, section, SectionError, set_verbosity
 
 
-class Command(BaseCommand):
+class Command(BaseBackupDbCommand):
     help = 'Backs up each database in settings.DATABASES.'
-    can_import_settings = True
 
-    option_list = BaseCommand.option_list + (
+    option_list = BaseBackupDbCommand.option_list + (
         make_option(
             '--backup-name',
             help=(
@@ -48,6 +45,8 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        super(Command, self).handle(*args, **options)
+
         from django.conf import settings
 
         current_time = time.strftime('%F-%s')
