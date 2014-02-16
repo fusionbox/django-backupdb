@@ -10,8 +10,8 @@ from django.db import close_connection
 from backupdb_utils.commands import BaseBackupDbCommand
 from backupdb_utils.exceptions import RestoreError
 from backupdb_utils.files import get_latest_timestamped_file
+from backupdb_utils.log import section, SectionError, SectionWarning
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
-from backupdb_utils.streams import section, SectionError, SectionWarning
 
 
 class Command(BaseBackupDbCommand):

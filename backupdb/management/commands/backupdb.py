@@ -6,8 +6,8 @@ import time
 
 from backupdb_utils.commands import BaseBackupDbCommand, do_postgresql_backup
 from backupdb_utils.exceptions import BackupError
+from backupdb_utils.log import section, SectionError, SectionWarning
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
-from backupdb_utils.streams import section, SectionError, SectionWarning
 
 
 class Command(BaseBackupDbCommand):
