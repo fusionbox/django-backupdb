@@ -52,7 +52,7 @@ def section(msg):
     to logging.error or logging.warning respectively and the bottom bar caption
     becomes '...skipped.'.
     """
-    bar(msg, position='top')
+    logging.info(bar(msg, position='top'))
     try:
         yield
     except SectionError as e:
@@ -62,4 +62,4 @@ def section(msg):
         logging.warning(e.message)
         logging.info(bar('...skipped.', position='bottom'))
     else:
-        bar('...done!', position='bottom')
+        logging.info(bar('...done!', position='bottom'))
