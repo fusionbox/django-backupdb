@@ -20,10 +20,11 @@ class BaseBackupDbCommand(BaseCommand):
         2: logging.DEBUG,
         3: logging.DEBUG,
     }
+    LOG_FORMAT = '%(asctime)s - %(levelname)-8s: %(message)s'
 
     def _setup_logging(self, level):
         level = int(level)
-        logging.basicConfig(format='%(levelname)s: %(message)s', level=self.LOG_LEVELS[level])
+        logging.basicConfig(format=self.LOG_FORMAT, level=self.LOG_LEVELS[level])
 
     def handle(self, *args, **options):
         self._setup_logging(options['verbosity'])
