@@ -1,142 +1,47 @@
-from mock import patch, call
-import sys
 import unittest
 
-from backupdb_utils.streams import out, err, bar, set_verbosity, SectionError, section
+from backupdb_utils.streams import bar
 
 
-class PatchStandardStreamsTestCase(unittest.TestCase):
-    def setUp(self):
-        self.stdout_patcher = patch('sys.stdout')
-        self.stderr_patcher = patch('sys.stderr')
-        self.mock_stdout = self.stdout_patcher.start()
-        self.mock_stderr = self.stderr_patcher.start()
-
-    def tearDown(self):
-        self.stdout_patcher.stop()
-        self.stderr_patcher.stop()
-
-    def assertStdOutCallsEqual(self, *args):
-        self.assertEqual(self.mock_stdout.write.call_args_list, list(args))
-
-    def assertStdErrCallsEqual(self, *args):
-        self.assertEqual(self.mock_stderr.write.call_args_list, list(args))
-
-
-class ErrTestCase(PatchStandardStreamsTestCase):
-    def test_calling_err_writes_to_sys_stderr(self):
-        err('Richard Dean Anderson is...', newline=False)
-        err('MacGyver')
-
-        self.assertStdErrCallsEqual(
-            call('Richard Dean Anderson is...'),
-            call('MacGyver\n'),
+class BarTestCase(unittest.TestCase):
+    def test_it_should_return_a_string_with_text_centered_in_a_bar(self):
+        self.assertEqual(
+            bar('test', width=70),
+            '================================ test ================================',
         )
 
+    def test_it_should_return_a_bar_string_with_the_specified_width(self):
+        test_bar1 = r'=========================== test ==========================='
+        test_bar2 = r'//========================= test =========================\\'
+        test_bar3 = r'\\========================= test =========================//'
 
-class OutTestCase(PatchStandardStreamsTestCase):
-    def test_calling_out_writes_to_sys_stdout(self):
-        out('Richard Dean Anderson is...', newline=False)
-        out('MacGyver')
+        self.assertEqual(len(test_bar1), 60)
+        self.assertEqual(len(test_bar2), 60)
+        self.assertEqual(len(test_bar3), 60)
 
-        self.assertStdOutCallsEqual(
-            call('Richard Dean Anderson is...'),
-            call('MacGyver\n'),
-        )
+        self.assertEqual(bar('test', width=60), test_bar1)
+        self.assertEqual(bar('test', width=60, position='top'), test_bar2)
+        self.assertEqual(bar('test', width=60, position='bottom'), test_bar3)
 
+    def test_it_should_work_even_if_the_given_width_is_less_than_the_message_length(self):
+        self.assertEqual(bar('test', width=0), '== test ==')
+        self.assertEqual(bar('test', width=0, position='top'), r'// test \\')
+        self.assertEqual(bar('test', width=0, position='bottom'), r'\\ test //')
 
-class BarTestCase(PatchStandardStreamsTestCase):
-    def test_calling_bar_writes_a_bar_to_the_given_stream(self):
-        bar('Long ago, in a galaxy far away...', width=70, stream=sys.stderr)
-        bar('test', width=10, stream=sys.stderr)
+    def test_it_should_render_a_top_bottom_or_plain_bar_depending_on_the_position_argument(self):
+        test_bar1 = r'================================ test ================================'
+        test_bar2 = r'//============================== test ==============================\\'
+        test_bar3 = r'\\============================== test ==============================//'
 
-        self.assertStdErrCallsEqual(
-            call('================== Long ago, in a galaxy far away... =================\n'),
-            call('== test ==\n'),
-        )
+        self.assertEqual(bar('test', width=70), test_bar1)
+        self.assertEqual(bar('test', width=70, position='top'), test_bar2)
+        self.assertEqual(bar('test', width=70, position='bottom'), test_bar3)
 
-        bar('test', width=10, stream=sys.stdout)
+    def test_it_should_allow_the_message_to_be_blank(self):
+        test_bar1 = r'======================================================================'
+        test_bar2 = r'//==================================================================\\'
+        test_bar3 = r'\\==================================================================//'
 
-        self.assertStdOutCallsEqual(
-            call('== test ==\n'),
-        )
-
-    def test_calling_bar_writes_to_stderr_by_default(self):
-        bar('test', width=10)
-
-        self.assertStdErrCallsEqual(
-            call('== test ==\n'),
-        )
-
-    def test_bars_default_to_width_70(self):
-        bar('Long ago, in a galaxy far away...')
-
-        self.assertStdErrCallsEqual(
-            call('================== Long ago, in a galaxy far away... =================\n'),
-        )
-
-    def test_calling_bar_without_message_prints_full_bar(self):
-        bar(width=10)
-
-        self.assertStdErrCallsEqual(
-            call('==========\n'),
-        )
-
-    def test_calling_bar_with_the_position_argument_prints_beginning_and_ending_bars(self):
-        bar('Richard Dean Anderson is...', position='top', width=50)
-        bar('...MacGyver', position='bottom', width=50)
-
-        self.assertStdErrCallsEqual(
-            call('//========= Richard Dean Anderson is... ========\\\\\n'),
-            call('\\\\================= ...MacGyver ================//\n'),
-        )
-
-
-class SetVerbosityTestCase(PatchStandardStreamsTestCase):
-    def test_messages_higher_than_current_verbosity_level_are_ignored(self):
-        set_verbosity(0)
-        err('Shh...', verbosity=1)
-        out('Shh...', verbosity=1)
-
-        self.assertStdErrCallsEqual()
-
-    def test_messages_lower_than_or_equal_to_current_verbosity_level_are_printed(self):
-        set_verbosity(0)
-        err('Shh...', verbosity=1)
-        set_verbosity(1)
-        err('...be vewy vewy kwiet...', verbosity=1)
-        err("...I'm hunting wabbit...", verbosity=2)
-        set_verbosity(2)
-        out('FWEEZE WABBIT!', verbosity=2)
-
-        self.assertStdErrCallsEqual(
-            call('...be vewy vewy kwiet...\n'),
-        )
-
-        self.assertStdOutCallsEqual(
-            call('FWEEZE WABBIT!\n'),
-        )
-
-
-class SectionTestCase(PatchStandardStreamsTestCase):
-    def test_beginning_and_ending_bars_surround_code_executed_in_a_section_context(self):
-        with section('Long ago, in a galaxy far away...'):
-            err('Luke...I am your fathaa...')
-            err('NOOO!!!')
-
-        self.assertStdErrCallsEqual(
-            call('//================ Long ago, in a galaxy far away... ===============\\\\\n'),
-            call('Luke...I am your fathaa...\n'),
-            call('NOOO!!!\n'),
-            call('\\\\============================ ...done! ============================//\n'),
-        )
-
-    def test_raising_a_section_error_in_a_section_context_changes_the_ending_bar_caption(self):
-        with section('Long ago, in a galaxy far away...'):
-            raise SectionError('Mesa called Jar-Jar Binks. Mesa your humble servant.')
-
-        self.assertStdErrCallsEqual(
-            call('//================ Long ago, in a galaxy far away... ===============\\\\\n'),
-            call('Mesa called Jar-Jar Binks. Mesa your humble servant.\n'),
-            call('\\\\=========================== ...skipped. ==========================//\n'),
-        )
+        self.assertEqual(bar(width=70), test_bar1)
+        self.assertEqual(bar(width=70, position='top'), test_bar2)
+        self.assertEqual(bar(width=70, position='bottom'), test_bar3)
