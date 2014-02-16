@@ -1,8 +1,7 @@
 from subprocess import Popen, PIPE, CalledProcessError
+import logging
 import os
 import shutil
-
-from .streams import err
 
 
 def extend_env(extra_env):
@@ -31,7 +30,7 @@ def pipe_commands(cmds, extra_env=None, show_stderr=False, show_last_stdout=Fals
     env_str = (get_env_str(extra_env) + ' ') if extra_env else ''
     cmd_strs = [env_str + ' '.join(cmd) for cmd in cmds]
 
-    err('* Running `{0}`'.format(' | '.join(cmd_strs)), verbosity=1)
+    logging.info('Running `{0}`'.format(' | '.join(cmd_strs)))
 
     with open('/dev/null', 'w') as NULL:
         # Start processes
@@ -65,7 +64,7 @@ def pipe_commands_to_file(cmds, path, extra_env=None, show_stderr=False):
     env_str = (get_env_str(extra_env) + ' ') if extra_env else ''
     cmd_strs = [env_str + ' '.join(cmd) for cmd in cmds]
 
-    err('* Saving output of `{0}`'.format(' | '.join(cmd_strs)), verbosity=1)
+    logging.info('Saving output of `{0}`'.format(' | '.join(cmd_strs)))
 
     with open('/dev/null', 'w') as NULL:
         # Start processes
