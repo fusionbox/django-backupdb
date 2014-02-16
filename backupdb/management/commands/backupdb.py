@@ -1,12 +1,13 @@
 from optparse import make_option
 from subprocess import CalledProcessError
+import logging
 import os
 import time
 
 from backupdb_utils.commands import BaseBackupDbCommand, do_postgresql_backup
 from backupdb_utils.exceptions import BackupError
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
-from backupdb_utils.streams import err, section, SectionError, set_verbosity
+from backupdb_utils.streams import section, SectionError, SectionWarning
 
 
 class Command(BaseBackupDbCommand):
@@ -53,8 +54,6 @@ class Command(BaseBackupDbCommand):
         backup_name = options['backup_name'] or current_time
         show_output = options['show_output']
 
-        set_verbosity(int(options['verbosity']))
-
         # Ensure backup dir present
         if not os.path.exists(BACKUP_DIR):
             os.makedirs(BACKUP_DIR)
@@ -66,7 +65,7 @@ class Command(BaseBackupDbCommand):
                 engine = db_config['ENGINE']
                 backup_config = BACKUP_CONFIG.get(engine)
                 if not backup_config:
-                    raise SectionError("! Backup for '{0}' engine not implemented".format(engine))
+                    raise SectionWarning("Backup for '{0}' engine not implemented".format(engine))
 
                 # Get backup file name
                 backup_base_name = '{db_name}-{backup_name}.{backup_extension}.gz'.format(
@@ -89,8 +88,8 @@ class Command(BaseBackupDbCommand):
                 # Run backup command
                 try:
                     backup_func(**backup_kwargs)
-                    err("* Backup of '{db_name}' saved in '{backup_file}'".format(
+                    logging.info("Backup of '{db_name}' saved in '{backup_file}'".format(
                         db_name=db_name,
                         backup_file=backup_file))
                 except (BackupError, CalledProcessError) as e:
-                    raise SectionError('! {0}'.format(e))
+                    raise SectionError(e)

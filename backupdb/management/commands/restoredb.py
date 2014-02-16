@@ -1,5 +1,6 @@
 from optparse import make_option
 from subprocess import CalledProcessError
+import logging
 import os
 
 from django.core.management.base import CommandError
@@ -10,7 +11,7 @@ from backupdb_utils.commands import BaseBackupDbCommand
 from backupdb_utils.exceptions import RestoreError
 from backupdb_utils.files import get_latest_timestamped_file
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
-from backupdb_utils.streams import err, set_verbosity, section, SectionError
+from backupdb_utils.streams import section, SectionError, SectionWarning
 
 
 class Command(BaseBackupDbCommand):
@@ -67,8 +68,6 @@ class Command(BaseBackupDbCommand):
         drop_tables = options['drop_tables']
         show_output = options['show_output']
 
-        set_verbosity(int(options['verbosity']))
-
         # Loop through databases
         for db_name, db_config in settings.DATABASES.items():
             with section("Restoring '{0}'...".format(db_name)):
@@ -76,7 +75,7 @@ class Command(BaseBackupDbCommand):
                 engine = db_config['ENGINE']
                 backup_config = BACKUP_CONFIG.get(engine)
                 if not backup_config:
-                    raise SectionError("! Restore for '{0}' engine not implemented".format(engine))
+                    raise SectionWarning("Restore for '{0}' engine not implemented".format(engine))
 
                 # Get backup file name
                 backup_extension = backup_config['backup_extension']
@@ -91,7 +90,7 @@ class Command(BaseBackupDbCommand):
                     try:
                         backup_file = get_latest_timestamped_file(backup_extension)
                     except RestoreError as e:
-                        raise SectionError('! {0}'.format(e))
+                        raise SectionError(e)
 
                 # Find restore command and get kwargs
                 restore_func = backup_config['restore_func']
@@ -105,8 +104,8 @@ class Command(BaseBackupDbCommand):
                 # Run restore command
                 try:
                     restore_func(**restore_kwargs)
-                    err("* Restored '{db_name}' from '{backup_file}'".format(
+                    logging.info("Restored '{db_name}' from '{backup_file}'".format(
                         db_name=db_name,
                         backup_file=backup_file))
                 except (RestoreError, CalledProcessError) as e:
-                    raise SectionError('! {0}'.format(e))
+                    raise SectionError(e)
