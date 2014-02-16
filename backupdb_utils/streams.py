@@ -2,7 +2,7 @@ import contextlib
 import logging
 
 
-def bar(msg='', width=70, position=None):
+def bar(msg='', width=40, position=None):
     r"""
     Returns a string with text centered in a bar caption.
 
