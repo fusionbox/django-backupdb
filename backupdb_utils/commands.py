@@ -33,6 +33,7 @@ class BaseBackupDbCommand(BaseCommand):
 def apply_arg_values(arg_values):
     """
     Apply argument to values.
+
     l = [('--name={0}', 'name'),
          ('--password={0}', 'password'),
          ('--level={0}', ''),
