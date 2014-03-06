@@ -1,6 +1,8 @@
 import contextlib
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 def bar(msg='', width=40, position=None):
     r"""
@@ -52,14 +54,14 @@ def section(msg):
     to logging.error or logging.warning respectively and the bottom bar caption
     becomes '...skipped.'.
     """
-    logging.info(bar(msg, position='top'))
+    logger.info(bar(msg, position='top'))
     try:
         yield
     except SectionError as e:
-        logging.error(e.message)
-        logging.info(bar('...skipped.', position='bottom'))
+        logger.error(e.message)
+        logger.info(bar('...skipped.', position='bottom'))
     except SectionWarning as e:
-        logging.warning(e.message)
-        logging.info(bar('...skipped.', position='bottom'))
+        logger.warning(e.message)
+        logger.info(bar('...skipped.', position='bottom'))
     else:
-        logging.info(bar('...done!', position='bottom'))
+        logger.info(bar('...done!', position='bottom'))

@@ -9,6 +9,8 @@ from backupdb_utils.exceptions import BackupError
 from backupdb_utils.log import section, SectionError, SectionWarning
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseBackupDbCommand):
     help = 'Backs up each database in settings.DATABASES.'
@@ -88,7 +90,7 @@ class Command(BaseBackupDbCommand):
                 # Run backup command
                 try:
                     backup_func(**backup_kwargs)
-                    logging.info("Backup of '{db_name}' saved in '{backup_file}'".format(
+                    logger.info("Backup of '{db_name}' saved in '{backup_file}'".format(
                         db_name=db_name,
                         backup_file=backup_file))
                 except (BackupError, CalledProcessError) as e:

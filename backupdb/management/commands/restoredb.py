@@ -13,6 +13,8 @@ from backupdb_utils.files import get_latest_timestamped_file
 from backupdb_utils.log import section, SectionError, SectionWarning
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseBackupDbCommand):
     help = 'Restores each database in settings.DATABASES from latest db backup.'
@@ -104,7 +106,7 @@ class Command(BaseBackupDbCommand):
                 # Run restore command
                 try:
                     restore_func(**restore_kwargs)
-                    logging.info("Restored '{db_name}' from '{backup_file}'".format(
+                    logger.info("Restored '{db_name}' from '{backup_file}'".format(
                         db_name=db_name,
                         backup_file=backup_file))
                 except (RestoreError, CalledProcessError) as e:
