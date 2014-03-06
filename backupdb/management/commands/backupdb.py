@@ -1,21 +1,21 @@
 from optparse import make_option
 from subprocess import CalledProcessError
+import logging
 import os
 import time
 
-from django.core.management.base import BaseCommand
-
-from backupdb_utils.commands import do_postgresql_backup
+from backupdb_utils.commands import BaseBackupDbCommand, do_postgresql_backup
 from backupdb_utils.exceptions import BackupError
+from backupdb_utils.log import section, SectionError, SectionWarning
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
-from backupdb_utils.streams import err, section, SectionError, set_verbosity
+
+logger = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(BaseBackupDbCommand):
     help = 'Backs up each database in settings.DATABASES.'
-    can_import_settings = True
 
-    option_list = BaseCommand.option_list + (
+    option_list = BaseBackupDbCommand.option_list + (
         make_option(
             '--backup-name',
             help=(
@@ -48,13 +48,13 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        super(Command, self).handle(*args, **options)
+
         from django.conf import settings
 
         current_time = time.strftime('%F-%s')
         backup_name = options['backup_name'] or current_time
         show_output = options['show_output']
-
-        set_verbosity(int(options['verbosity']))
 
         # Ensure backup dir present
         if not os.path.exists(BACKUP_DIR):
@@ -67,7 +67,7 @@ class Command(BaseCommand):
                 engine = db_config['ENGINE']
                 backup_config = BACKUP_CONFIG.get(engine)
                 if not backup_config:
-                    raise SectionError("! Backup for '{0}' engine not implemented".format(engine))
+                    raise SectionWarning("Backup for '{0}' engine not implemented".format(engine))
 
                 # Get backup file name
                 backup_base_name = '{db_name}-{backup_name}.{backup_extension}.gz'.format(
@@ -90,8 +90,8 @@ class Command(BaseCommand):
                 # Run backup command
                 try:
                     backup_func(**backup_kwargs)
-                    err("* Backup of '{db_name}' saved in '{backup_file}'".format(
+                    logger.info("Backup of '{db_name}' saved in '{backup_file}'".format(
                         db_name=db_name,
                         backup_file=backup_file))
                 except (BackupError, CalledProcessError) as e:
-                    raise SectionError('! {0}'.format(e))
+                    raise SectionError(e)

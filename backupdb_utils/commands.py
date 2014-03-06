@@ -1,5 +1,8 @@
+import logging
 import os
 import shlex
+
+from django.core.management.base import BaseCommand
 
 from .exceptions import RestoreError
 from .processes import pipe_commands, pipe_commands_to_file
@@ -7,9 +10,30 @@ from .processes import pipe_commands, pipe_commands_to_file
 
 PG_DROP_SQL = """SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' FROM pg_tables WHERE schemaname = 'public';"""
 
+
+class BaseBackupDbCommand(BaseCommand):
+    can_import_settings = True
+
+    LOG_LEVELS = {
+        0: logging.ERROR,
+        1: logging.INFO,
+        2: logging.DEBUG,
+        3: logging.DEBUG,
+    }
+    LOG_FORMAT = '%(asctime)s - %(levelname)-8s: %(message)s'
+
+    def _setup_logging(self, level):
+        level = int(level)
+        logging.basicConfig(format=self.LOG_FORMAT, level=self.LOG_LEVELS[level])
+
+    def handle(self, *args, **options):
+        self._setup_logging(options['verbosity'])
+
+
 def apply_arg_values(arg_values):
     """
     Apply argument to values.
+
     l = [('--name={0}', 'name'),
          ('--password={0}', 'password'),
          ('--level={0}', ''),

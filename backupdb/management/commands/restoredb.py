@@ -1,22 +1,25 @@
 from optparse import make_option
 from subprocess import CalledProcessError
+import logging
 import os
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.conf import settings
 from django.db import close_connection
 
+from backupdb_utils.commands import BaseBackupDbCommand
 from backupdb_utils.exceptions import RestoreError
 from backupdb_utils.files import get_latest_timestamped_file
+from backupdb_utils.log import section, SectionError, SectionWarning
 from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
-from backupdb_utils.streams import err, set_verbosity, section, SectionError
+
+logger = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(BaseBackupDbCommand):
     help = 'Restores each database in settings.DATABASES from latest db backup.'
-    can_import_settings = True
 
-    option_list = BaseCommand.option_list + (
+    option_list = BaseBackupDbCommand.option_list + (
         make_option(
             '--backup-name',
             help=(
@@ -53,6 +56,8 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
+        super(Command, self).handle(*args, **options)
+
         # Django is querying django_content_types in a hanging transaction
         # Because of this psql can't drop django_content_types and just hangs
         close_connection()
@@ -65,8 +70,6 @@ class Command(BaseCommand):
         drop_tables = options['drop_tables']
         show_output = options['show_output']
 
-        set_verbosity(int(options['verbosity']))
-
         # Loop through databases
         for db_name, db_config in settings.DATABASES.items():
             with section("Restoring '{0}'...".format(db_name)):
@@ -74,7 +77,7 @@ class Command(BaseCommand):
                 engine = db_config['ENGINE']
                 backup_config = BACKUP_CONFIG.get(engine)
                 if not backup_config:
-                    raise SectionError("! Restore for '{0}' engine not implemented".format(engine))
+                    raise SectionWarning("Restore for '{0}' engine not implemented".format(engine))
 
                 # Get backup file name
                 backup_extension = backup_config['backup_extension']
@@ -89,7 +92,7 @@ class Command(BaseCommand):
                     try:
                         backup_file = get_latest_timestamped_file(backup_extension)
                     except RestoreError as e:
-                        raise SectionError('! {0}'.format(e))
+                        raise SectionError(e)
 
                 # Find restore command and get kwargs
                 restore_func = backup_config['restore_func']
@@ -103,8 +106,8 @@ class Command(BaseCommand):
                 # Run restore command
                 try:
                     restore_func(**restore_kwargs)
-                    err("* Restored '{db_name}' from '{backup_file}'".format(
+                    logger.info("Restored '{db_name}' from '{backup_file}'".format(
                         db_name=db_name,
                         backup_file=backup_file))
                 except (RestoreError, CalledProcessError) as e:
-                    raise SectionError('! {0}'.format(e))
+                    raise SectionError(e)
