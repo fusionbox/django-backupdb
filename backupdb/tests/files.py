@@ -1,7 +1,7 @@
-from backupdb_utils.exceptions import RestoreError
-from backupdb_utils.files import get_latest_timestamped_file
+from backupdb.utils.exceptions import RestoreError
+from backupdb.utils.files import get_latest_timestamped_file
 
-from .utils import FileSystemScratchTestCase
+from backupdb.tests.utils import FileSystemScratchTestCase
 
 
 class GetLatestTimestampedFileTestCase(FileSystemScratchTestCase):

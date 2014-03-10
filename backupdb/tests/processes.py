@@ -2,7 +2,7 @@ from subprocess import CalledProcessError
 import os
 import unittest
 
-from backupdb_utils.processes import (
+from backupdb.utils.processes import (
     extend_env,
     get_env_str,
     pipe_commands,

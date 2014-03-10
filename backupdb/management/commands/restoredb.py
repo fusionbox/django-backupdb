@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from optparse import make_option
 from subprocess import CalledProcessError
 import logging
@@ -7,11 +8,11 @@ from django.core.management.base import CommandError
 from django.conf import settings
 from django.db import close_connection
 
-from backupdb_utils.commands import BaseBackupDbCommand
-from backupdb_utils.exceptions import RestoreError
-from backupdb_utils.files import get_latest_timestamped_file
-from backupdb_utils.log import section, SectionError, SectionWarning
-from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
+from backupdb.utils.commands import BaseBackupDbCommand
+from backupdb.utils.exceptions import RestoreError
+from backupdb.utils.files import get_latest_timestamped_file
+from backupdb.utils.log import section, SectionError, SectionWarning
+from backupdb.utils.settings import BACKUP_DIR, BACKUP_CONFIG
 
 logger = logging.getLogger(__name__)
 

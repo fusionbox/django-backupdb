@@ -1,7 +1,7 @@
 from mock import call, patch
 import unittest
 
-from backupdb_utils.commands import (
+from backupdb.utils.commands import (
     PG_DROP_SQL,
     get_mysql_args,
     get_postgresql_args,
@@ -13,7 +13,7 @@ from backupdb_utils.commands import (
     do_postgresql_restore,
     do_sqlite_restore,
 )
-from backupdb_utils.exceptions import RestoreError
+from backupdb.utils.exceptions import RestoreError
 
 
 DB_CONFIG = {
@@ -48,8 +48,8 @@ class PatchPipeCommandsTestCase(unittest.TestCase):
     Used for testing of pipe_commands and pipe_commands_to_file.
     """
     def setUp(self):
-        self.pipe_commands_patcher = patch('backupdb_utils.commands.pipe_commands')
-        self.pipe_commands_to_file_patcher = patch('backupdb_utils.commands.pipe_commands_to_file')
+        self.pipe_commands_patcher = patch('backupdb.utils.commands.pipe_commands')
+        self.pipe_commands_to_file_patcher = patch('backupdb.utils.commands.pipe_commands_to_file')
         self.os_patcher = patch('os.path.exists', new_callable=MockOsPathExists)
 
         self.mock_pipe_commands = self.pipe_commands_patcher.start()

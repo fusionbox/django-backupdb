@@ -1,6 +1,6 @@
 import unittest
 
-from backupdb_utils.log import bar
+from backupdb.utils.log import bar
 
 
 class BarTestCase(unittest.TestCase):

@@ -1,13 +1,14 @@
+from __future__ import absolute_import
 from optparse import make_option
 from subprocess import CalledProcessError
 import logging
 import os
 import time
 
-from backupdb_utils.commands import BaseBackupDbCommand, do_postgresql_backup
-from backupdb_utils.exceptions import BackupError
-from backupdb_utils.log import section, SectionError, SectionWarning
-from backupdb_utils.settings import BACKUP_DIR, BACKUP_CONFIG
+from backupdb.utils.commands import BaseBackupDbCommand, do_postgresql_backup
+from backupdb.utils.exceptions import BackupError
+from backupdb.utils.log import section, SectionError, SectionWarning
+from backupdb.utils.settings import BACKUP_DIR, BACKUP_CONFIG
 
 logger = logging.getLogger(__name__)
 
