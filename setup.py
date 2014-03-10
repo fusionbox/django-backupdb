@@ -44,7 +44,7 @@ setup(
         'mock>=1.0.1',
     ],
     install_requires=[
-        'Django>=1.3',
+        'Django>=1.4',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',

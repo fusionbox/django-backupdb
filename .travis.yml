@@ -1,0 +1,20 @@
+language: python
+python:
+    - "3.3"
+    - "2.7"
+    - "2.6"
+env:
+    - DJANGO="Django==1.4"
+    - DJANGO="Django==1.5"
+    - DJANGO="Django==1.6"
+    - DJANGO="https://github.com/django/django/archive/1.7a2.tar.gz#egg=Django"
+matrix:
+    exclude:
+        # Python 2.6 support has been dropped in Django 1.7
+        - python: "2.6"
+          env: DJANGO="https://github.com/django/django/archive/1.7a2.tar.gz#egg=Django"
+        # Support for python 3 was added in Django 1.5
+        - python: "3.3"
+          env: DJANGO="Django==1.4"
+install: pip install $DJANGO
+script: python setup.py test
