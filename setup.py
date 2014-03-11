@@ -1,10 +1,13 @@
 #!/usr/bin/env python
+import subprocess
+import os
 
 from setuptools import setup, find_packages
-import subprocess
 
 
 version = (0, 5, 5, 'final')
+
+current_path = os.path.dirname(__file__)
 
 
 def get_version():
@@ -19,7 +22,7 @@ def get_version():
 
 
 def get_readme():
-    with open('README.rst') as f:
+    with open(os.path.join(current_path, 'README.rst'), 'r') as f:
         return f.read()
 
 
