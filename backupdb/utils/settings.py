@@ -6,9 +6,11 @@ from .commands import (
     do_sqlite_backup,
     do_sqlite_restore,
 )
+from django.conf import settings
 
 
-BACKUP_DIR = 'backups'
+DEFAULT_BACKUP_DIR = 'backups'
+BACKUP_DIR = getattr(settings, 'BACKUPDB_DIRECTORY', DEFAULT_BACKUP_DIR)
 BACKUP_TIMESTAMP_PATTERN = '*-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
 BACKUP_CONFIG = {
     'django.db.backends.mysql': {
