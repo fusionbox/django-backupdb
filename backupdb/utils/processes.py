@@ -50,11 +50,14 @@ def pipe_commands(cmds, extra_env=None, show_stderr=False, show_last_stdout=Fals
             processes.append((cmd_str, p))
 
         # Close processes
+        error = False
         for cmd_str, p in processes:
             if p.stdout:
                 p.stdout.close()
             if p.wait() != 0:
-                raise CalledProcessError(cmd=cmd_str, returncode=p.returncode)
+                error = True
+        if error:
+            raise CalledProcessError(cmd=cmd_str, returncode=p.returncode)
 
 
 def pipe_commands_to_file(cmds, path, extra_env=None, show_stderr=False):
@@ -84,7 +87,10 @@ def pipe_commands_to_file(cmds, path, extra_env=None, show_stderr=False):
             shutil.copyfileobj(p_last.stdout, f)
 
             # Close processes
+            error = False
             for cmd_str, p in processes:
                 p.stdout.close()
                 if p.wait() != 0:
-                    raise CalledProcessError(cmd=cmd_str, returncode=p.returncode)
+                    error = True
+            if error:
+                raise CalledProcessError(cmd=cmd_str, returncode=p.returncode)
