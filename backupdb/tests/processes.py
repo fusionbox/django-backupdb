@@ -2,6 +2,13 @@ from subprocess import CalledProcessError
 import os
 import unittest
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    # This should only happen in Python 2.6
+    # SortedDict is deprecated in Django 1.7 and will be removed in Django 1.9
+    from django.utils.datastructures import SortedDict as OrderedDict
+
 from backupdb.utils.processes import (
     extend_env,
     get_env_str,
@@ -9,7 +16,6 @@ from backupdb.utils.processes import (
     pipe_commands_to_file,
 )
 
-from .ordereddict import OrderedDict
 from .utils import FileSystemScratchTestCase
 
 
