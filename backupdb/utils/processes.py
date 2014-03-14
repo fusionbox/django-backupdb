@@ -80,7 +80,7 @@ def pipe_commands_to_file(cmds, path, extra_env=None, show_stderr=False):
 
         p_last = processes[-1][1]
 
-        with open(path, 'w') as f:
+        with open(path, 'wb') as f:
             shutil.copyfileobj(p_last.stdout, f)
 
             # Close processes
