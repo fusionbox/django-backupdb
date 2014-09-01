@@ -6,7 +6,7 @@ import os
 from setuptools import setup
 
 
-version = (0, 6, 0, 'alpha')
+version = (0, 6, 0, 'final')
 
 current_path = os.path.dirname(__file__)
 
