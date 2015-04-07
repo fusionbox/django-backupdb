@@ -3,9 +3,6 @@ import shutil
 
 import dj_database_url
 db_config = dj_database_url.config()
-name = db_config['NAME']
-db_config['TEST_NAME'] = name
-db_config['NAME'] = '_{}'.format(name)
 
 from django.conf import settings
 settings.configure(
@@ -19,6 +16,10 @@ from django.test import SimpleTestCase
 from django.test.utils import override_settings
 from django.core import management
 from django.contrib.contenttypes.models import ContentType
+import django
+
+if hasattr(django, 'setup'):  # Django > 1.6
+    django.setup()  # Setup the app registry
 
 
 class BackupTest(SimpleTestCase):
@@ -29,6 +30,8 @@ class BackupTest(SimpleTestCase):
         self._settings.enable()
 
     def test_backupdb(self):
+        management.call_command('syncdb')
+
         ct = ContentType.objects.create()
         # There should be a default content
         assert ContentType.objects.filter(pk=ct.pk).exists()

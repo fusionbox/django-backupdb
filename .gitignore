@@ -9,3 +9,4 @@ test_backupdb_database
 backups/
 .coverage
 .b_hook
+/.tox/

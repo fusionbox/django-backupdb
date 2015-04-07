@@ -1,20 +1,45 @@
 language: python
 python:
+    - "3.4"
     - "3.3"
     - "2.7"
     - "2.6"
+services:
+    - mysql
+    - postgres
 env:
-    - DJANGO="Django==1.4"
-    - DJANGO="Django==1.5"
-    - DJANGO="Django==1.6"
-    - DJANGO="https://github.com/django/django/archive/1.7a2.tar.gz#egg=Django"
+    - DB=sqlite
+    - DB=mysql
+    - DB=postresql
+
+    - DJANGO=1.4
+    - DJANGO=1.6
+    - DJANGO=1.7
+    - DJANGO=1.8
 matrix:
     exclude:
+        # Django 1.4 never supported Python 3
+        - python: "3.3"
+          env: DJANGO="1.4"
+        - python: "3.4"
+          env: DJANGO="1.4"
         # Python 2.6 support has been dropped in Django 1.7
         - python: "2.6"
-          env: DJANGO="https://github.com/django/django/archive/1.7a2.tar.gz#egg=Django"
-        # Support for python 3 was added in Django 1.5
-        - python: "3.3"
-          env: DJANGO="Django==1.4"
-install: pip install $DJANGO
+          env: DJANGO="1.7"
+        - python: "2.6"
+          env: DJANGO="1.8"
+before_script:
+    - test [ $DB = mysql ] && mysql -e "create database if not exists travis_ci_test;" -uroot
+    - test [ $DB = postgres ] && psql -e "create database if not exists travis_ci_test;" -U postgres
 script: python setup.py test
+    # This needs to be smart :(
+    - export PYVER=$(python3 -V | sed -e 's/^Python \([0-9]\)\.\([0-9]\)\.[0-9]\+$/\1\2/')
+    - export DJVER=$(echo $DJANGO | sed -e 's/\.//g')
+    - echo PYVER=$PYVER
+    - echo DJVER=$DJVER
+    - export DBNAME=/travis_ci_test
+    - test [ $DB = sqlite ] && export DBNAME="/tmp${DBNAME}"
+    - test [ $DB = postgres ] && export DBUSER="postgres@"
+    - test [ $DB = mysql ] && export DBUSER="root@"
+    - export DATABASE_URL="${DB}://${DBUSER}/${DBNAME}"
+    - tox -e "py${PYVER}-dj${DJVER}-$DB"
