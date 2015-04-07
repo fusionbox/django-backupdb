@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 
 from backupdb.backends.mysql import MySQLBackend
@@ -16,4 +18,5 @@ BACKUP_CONFIG = {
 
 
 def get_backup_directory():
-    return getattr(settings, 'BACKUPDB_DIRECTORY', DEFAULT_BACKUP_DIR)
+    return os.path.abspath(
+        getattr(settings, 'BACKUPDB_DIRECTORY', DEFAULT_BACKUP_DIR))
