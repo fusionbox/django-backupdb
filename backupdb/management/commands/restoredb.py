@@ -8,11 +8,9 @@ from django.core.management.base import CommandError
 from django.conf import settings
 from django.db import close_connection
 
-from backupdb.utils.commands import BaseBackupDbCommand
-from backupdb.utils.exceptions import RestoreError
-from backupdb.utils.files import get_latest_timestamped_file
-from backupdb.utils.log import section, SectionError, SectionWarning
-from backupdb.utils.settings import BACKUP_DIR, BACKUP_CONFIG
+from backupdb.utils import get_latest_timestamped_file
+from backupdb.settings import get_backup_directory, BACKUP_CONFIG
+from backupdb.utils import BaseBackupDbCommand
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +61,12 @@ class Command(BaseBackupDbCommand):
         # Because of this psql can't drop django_content_types and just hangs
         close_connection()
 
+        backup_directory = get_backup_directory()
+
         # Ensure backup dir present
-        if not os.path.exists(BACKUP_DIR):
-            raise CommandError("Backup dir '{0}' does not exist!".format(BACKUP_DIR))
+        if not os.path.exists(backup_directory):
+            raise CommandError("Backup dir {!r} does not exist!".format(
+                backup_directory))
 
         backup_name = options['backup_name']
         drop_tables = options['drop_tables']
@@ -73,42 +74,44 @@ class Command(BaseBackupDbCommand):
 
         # Loop through databases
         for db_name, db_config in settings.DATABASES.items():
-            with section("Restoring '{0}'...".format(db_name)):
-                # Get backup config for this engine type
-                engine = db_config['ENGINE']
-                backup_config = BACKUP_CONFIG.get(engine)
-                if not backup_config:
-                    raise SectionWarning("Restore for '{0}' engine not implemented".format(engine))
+            logger.info("Restoring {!r}".format(db_name))
+            engine = db_config['ENGINE']
+            try:
+                backup_cls = BACKUP_CONFIG[engine]
+            except KeyError:
+                logger.error(
+                    "Restore for {!r} engine not implemented".format(engine))
+                continue  # TODO: Raise an error by default
+                          # TODO: implement --ignore-errors
 
-                # Get backup file name
-                backup_extension = backup_config['backup_extension']
-                if backup_name:
-                    backup_file = '{dir}/{db_name}-{backup_name}.{ext}.gz'.format(
-                        dir=BACKUP_DIR,
-                        db_name=db_name,
-                        backup_name=backup_name,
-                        ext=backup_extension,
+
+
+            if backup_name:
+                fname = '{db}-{suffix}.{ext}.gz'.format(
+                    db=db_name,
+                    suffix=backup_suffix,
+                    ext=backup_cls.extension,
+                )
+            else:
+                fname = get_latest_timestamped_file(
+                    db_name, backup_cls.extension, backup_directory)
+                if fname is None:
+                    logger.error(
+                        "Couldn't find a default backup for '{!r}'".format(
+                            db_name)
                     )
-                else:
-                    try:
-                        backup_file = get_latest_timestamped_file(backup_extension)
-                    except RestoreError as e:
-                        raise SectionError(e)
+                    continue  # TODO: Raise an error by default
+                              # TODO: implement --ignore-errors
 
-                # Find restore command and get kwargs
-                restore_func = backup_config['restore_func']
-                restore_kwargs = {
-                    'backup_file': backup_file,
-                    'db_config': db_config,
-                    'drop_tables': drop_tables,
-                    'show_output': show_output,
-                }
+            absolute_fname = os.path.join(backup_directory, fname)
 
-                # Run restore command
-                try:
-                    restore_func(**restore_kwargs)
-                    logger.info("Restored '{db_name}' from '{backup_file}'".format(
-                        db_name=db_name,
-                        backup_file=backup_file))
-                except (RestoreError, CalledProcessError) as e:
-                    raise SectionError(e)
+            backup = backup_cls(
+                db_config=db_config,
+                backup_file=absolute_fname,
+                show_output=show_output,
+            )
+
+            backup.do_restore(drop_tables=drop_tables)
+            logger.info("Restored {db_name!r} from {backup_file!r}".format(
+                db_name=db_name,
+                backup_file=absolute_fname))

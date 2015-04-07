@@ -11,7 +11,6 @@ version = (0, 6, 0, 'alpha')
 current_path = os.path.dirname(__file__)
 
 sys.path.append(current_path)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'test_settings')
 
 
 def get_version():
@@ -29,6 +28,8 @@ def get_readme():
     with open(os.path.join(current_path, 'README.rst'), 'r') as f:
         return f.read()
 
+# TODO: Integrate py.test in python setup.py test
+
 setup(
     name='django-backupdb',
     version=get_version(),
@@ -38,22 +39,24 @@ setup(
     author_email='programmers@fusionbox.com',
     keywords='django database backup',
     url='https://github.com/fusionbox/django-backupdb',
-    packages=['backupdb', 'backupdb.utils', 'backupdb.management',
-              'backupdb.management.commands', 'backupdb.tests',
-              'backupdb.tests.app'],
+    packages=['backupdb', 'backupdb.backends', 'backupdb.management',
+              'backupdb.management.commands'],
     platforms='any',
-    license='Fusionbox',
-    test_suite='backupdb.tests.all_tests',
+    license='BSD',
     tests_require=[
-        'mock>=1.0.1',
         'dj_database_url==0.3.0',
     ],
     install_requires=[
         'Django>=1.4',
+        'spm',  # This avoid implementing subcommands in backupdb
     ],
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Framework :: Django',
+        'License :: OSI Approved :: BSD License'
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
     ],
 )

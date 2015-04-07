@@ -3,12 +3,13 @@ from optparse import make_option
 from subprocess import CalledProcessError
 import logging
 import os
-import time
+from datetime import datetime
 
-from backupdb.utils.commands import BaseBackupDbCommand, do_postgresql_backup
-from backupdb.utils.exceptions import BackupError
-from backupdb.utils.log import section, SectionError, SectionWarning
-from backupdb.utils.settings import BACKUP_DIR, BACKUP_CONFIG
+from django.conf import settings
+from django.utils import timezone
+
+from backupdb.utils import BaseBackupDbCommand
+from backupdb.settings import get_backup_directory, BACKUP_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -51,48 +52,54 @@ class Command(BaseBackupDbCommand):
     def handle(self, *args, **options):
         super(Command, self).handle(*args, **options)
 
-        from django.conf import settings
+        current_time_string = timezone.now().isoformat()
 
-        current_time = time.strftime('%F-%s')
-        backup_name = options['backup_name'] or current_time
+        backup_suffix = options['backup_name']
+        if backup_suffix is None:
+            backup_suffix = current_time_string
+
         show_output = options['show_output']
 
+        backup_directory = get_backup_directory()
+
         # Ensure backup dir present
-        if not os.path.exists(BACKUP_DIR):
-            os.makedirs(BACKUP_DIR)
+        if not os.path.exists(backup_directory):
+            os.makedirs(backup_directory)
 
         # Loop through databases
         for db_name, db_config in settings.DATABASES.items():
-            with section("Backing up '{0}'...".format(db_name)):
-                # Get backup config for this engine type
-                engine = db_config['ENGINE']
-                backup_config = BACKUP_CONFIG.get(engine)
-                if not backup_config:
-                    raise SectionWarning("Backup for '{0}' engine not implemented".format(engine))
+            logger.info("Starting to backup {!r}".format(db_name))
+            engine = db_config['ENGINE']
+            try:
+                backup_cls = BACKUP_CONFIG[engine]
+            except KeyError:
+                logger.error(
+                    "Backup for {!r} engine not implemented".format(engine))
+                continue  # TODO: Raise an error by default
+                          # TODO: implement --ignore-errors
 
-                # Get backup file name
-                backup_base_name = '{db_name}-{backup_name}.{backup_extension}.gz'.format(
-                    db_name=db_name,
-                    backup_name=backup_name,
-                    backup_extension=backup_config['backup_extension'],
-                )
-                backup_file = os.path.join(BACKUP_DIR, backup_base_name)
+            fname = '{db}-{suffix}.{ext}.gz'.format(
+                db=db_name,
+                suffix=backup_suffix,
+                ext=backup_cls.extension,
+            )
+            absolute_fname = os.path.join(backup_directory, fname)
 
-                # Find backup command and get kwargs
-                backup_func = backup_config['backup_func']
-                backup_kwargs = {
-                    'backup_file': backup_file,
-                    'db_config': db_config,
-                    'show_output': show_output,
-                }
-                if backup_func is do_postgresql_backup:
-                    backup_kwargs['pg_dump_options'] = options['pg_dump_options']
+            backup = backup_cls(
+                db_config=db_config,
+                backup_file=absolute_fname,
+                show_output=show_output,
+            )
 
-                # Run backup command
-                try:
-                    backup_func(**backup_kwargs)
-                    logger.info("Backup of '{db_name}' saved in '{backup_file}'".format(
+
+            try:
+                backup.do_backup()
+            except RuntimeError as e:
+                logger.error(e.message)
+            else:
+                logger.info(
+                    "Backup of {db_name!r} saved in {backup_file!r}".format(
                         db_name=db_name,
-                        backup_file=backup_file))
-                except (BackupError, CalledProcessError) as e:
-                    raise SectionError(e)
+                        backup_file=fname
+                    )
+                )
