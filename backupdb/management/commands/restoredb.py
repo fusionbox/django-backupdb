@@ -6,7 +6,6 @@ import os
 
 from django.core.management.base import CommandError
 from django.conf import settings
-from django.db import close_connection
 
 from backupdb.utils.commands import BaseBackupDbCommand
 from backupdb.utils.exceptions import RestoreError
@@ -54,15 +53,10 @@ class Command(BaseBackupDbCommand):
                 'understanding how restoration is failing in the case that it '
                 'is.'
             ),
-        ),
-    )
+        )
 
     def handle(self, *args, **options):
         super(Command, self).handle(*args, **options)
-
-        # Django is querying django_content_types in a hanging transaction
-        # Because of this psql can't drop django_content_types and just hangs
-        close_connection()
 
         # Ensure backup dir present
         if not os.path.exists(BACKUP_DIR):
