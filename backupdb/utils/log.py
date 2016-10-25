@@ -58,10 +58,10 @@ def section(msg):
     try:
         yield
     except SectionError as e:
-        logger.error(e.message)
+        logger.error(e)
         logger.info(bar('...skipped.', position='bottom'))
     except SectionWarning as e:
-        logger.warning(e.message)
+        logger.warning(e)
         logger.info(bar('...skipped.', position='bottom'))
     else:
         logger.info(bar('...done!', position='bottom'))
