@@ -20,8 +20,9 @@ logger = logging.getLogger(__name__)
 class Command(BaseBackupDbCommand):
     help = 'Restores each database in settings.DATABASES from latest db backup.'
 
-    option_list = BaseBackupDbCommand.option_list + (
-        make_option(
+    def add_arguments(self, parser):
+
+        parser.add_argument(
             '--backup-name',
             help=(
                 'Name of backup to restore from.  Example: '
@@ -29,8 +30,8 @@ class Command(BaseBackupDbCommand):
                 'like "default-mybackup.pgsql.gz".  Defaults to latest '
                 'timestamped backup name.'
             ),
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--drop-tables',
             action='store_true',
             default=False,
@@ -40,8 +41,8 @@ class Command(BaseBackupDbCommand):
                 'have drop statements so, usually, this option is not '
                 'necessary.'
             ),
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--show-output',
             action='store_true',
             default=False,

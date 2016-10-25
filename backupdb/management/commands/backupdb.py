@@ -16,24 +16,24 @@ logger = logging.getLogger(__name__)
 class Command(BaseBackupDbCommand):
     help = 'Backs up each database in settings.DATABASES.'
 
-    option_list = BaseBackupDbCommand.option_list + (
-        make_option(
+    def add_arguments(self, parser):
+        parser.add_argument(
             '--backup-name',
             help=(
                 'Specify a name for the backup.  Defaults to the current '
                 'timestamp.  Example: `--backup-name=test` will create backup '
                 'files that look like "default-test.pgsql.gz".'
             ),
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--pg-dump-options',
             help=(
                 'For postgres backups, a list of additional options that will '
                 'be passed through to the pg_dump utility.  Example: '
                 '`--pg-dump-options="--inserts --no-owner"`'
             ),
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '--show-output',
             action='store_true',
             default=False,
@@ -45,8 +45,7 @@ class Command(BaseBackupDbCommand):
                 'understanding how backups are failing in the case that they '
                 'are.'
             ),
-        ),
-    )
+        )
 
     def handle(self, *args, **options):
         super(Command, self).handle(*args, **options)
